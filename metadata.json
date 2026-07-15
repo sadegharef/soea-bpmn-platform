@@ -1,0 +1,6 @@
+{
+  "name": "BPMN 2.0 Web Modeler",
+  "description": "A professional, standalone BPMN 2.0 Modeling and Simulation Web Application for corporate workflows.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
