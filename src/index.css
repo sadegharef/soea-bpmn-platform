@@ -157,7 +157,12 @@ html, body, #root {
   background-color: #0f172a;
 }
 
-.dark-theme .bio-properties-panel {
+.dark-theme .bio-properties-panel,
+.dark-theme .bio-properties-panel-scroll-container,
+.dark-theme .bio-properties-panel-list,
+.dark-theme .bio-properties-panel-group,
+.dark-theme .bio-properties-panel-group-entries,
+.dark-theme .bio-properties-panel-entry {
   background-color: #1e293b !important;
   color: #f8fafc !important;
 }
@@ -169,14 +174,31 @@ html, body, #root {
 
 .dark-theme .bio-properties-panel-group-header {
   background-color: #1e293b !important;
+  color: #f8fafc !important;
+  border-top: 1px solid #334155 !important;
+  border-bottom: 1px solid #334155 !important;
+}
+
+.dark-theme .bio-properties-panel-group-header:hover {
+  background-color: #334155 !important;
+}
+
+.dark-theme .bio-properties-panel-group-header-title {
+  color: #f8fafc !important;
+}
+
+.dark-theme .bio-properties-panel-label {
   color: #cbd5e1 !important;
-  border-top-color: #334155 !important;
+}
+
+.dark-theme .bio-properties-panel-description {
+  color: #94a3b8 !important;
 }
 
 .dark-theme .bio-properties-panel-input {
   background-color: #0f172a !important;
   color: #f8fafc !important;
-  border-color: #334155 !important;
+  border: 1px solid #334155 !important;
 }
 
 .dark-theme .bio-properties-panel-input:focus {

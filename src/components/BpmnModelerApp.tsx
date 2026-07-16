@@ -461,12 +461,12 @@ export default function BpmnModelerApp() {
         <div className="flex items-center gap-4">
           {/* Main Logo & Title */}
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-white shadow-lg shrink-0">
-              B
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-white shrink-0 overflow-hidden">
+              <img src="/logo.png" alt="هم‌نگار" className="w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.parentElement!.innerHTML = '<div class="w-full h-full bg-blue-600 flex items-center justify-center">هـ</div>'; }} />
             </div>
             <div>
-              <h1 className="font-bold text-sm tracking-tight text-slate-900 dark:text-white">مدلساز فرایند هوشمند BPMN</h1>
-              <p className="text-[10px] text-slate-400 dark:text-slate-400 font-medium leading-none mt-0.5">پلتفرم بومی مدلسازی و اعتبارسنجی</p>
+              <h1 className="font-bold text-sm tracking-tight text-slate-900 dark:text-white">هم‌نگار</h1>
+              <p className="text-[10px] text-slate-400 dark:text-slate-400 font-medium leading-none mt-0.5">بوم مشترک فرآیندهای شما</p>
             </div>
           </div>
 
@@ -730,11 +730,14 @@ export default function BpmnModelerApp() {
 
       {/* 3.5 Bottom Status Footer */}
       <footer className="h-8 bg-slate-50 dark:bg-[#1e293b] border-t border-slate-200 dark:border-slate-800 px-4 flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 shrink-0 select-none">
-        <div className="flex gap-4">
+        <div className="flex items-center gap-4">
           <span>وضعیت: آماده به کار</span>
           <span className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-emerald-500 block animate-pulse"></span>
             <span>اتصال به سرور برقرار است</span>
+          </span>
+          <span className="hidden sm:inline border-r border-slate-300 dark:border-slate-700 pr-4">
+            کلیه حقوق هم برای آزمایشگاه معماری سازمانی دانشگاه یزد محفوظ است.
           </span>
         </div>
         <div className="flex gap-4 font-mono">

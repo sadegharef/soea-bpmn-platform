@@ -103,6 +103,7 @@ export const PersianTranslations: Record<string, string> = {
   // Properties Panel General Headers
   'General': 'عمومی',
   'Documentation': 'مستندسازی',
+  'Element documentation': 'توضیحات عنصر',
   'Element Documentation': 'توضیحات عنصر',
   'Process Documentation': 'توضیحات فرآیند',
   'Details': 'جزئیات فنی',
@@ -111,6 +112,8 @@ export const PersianTranslations: Record<string, string> = {
   'Parameters': 'پارامترها',
   'Extension properties': 'ویژگی‌های افزونه',
   'Properties': 'ویژگی‌ها',
+  'PROCESS': 'فرآیند (PROCESS)',
+  'ID': 'شناسه (ID)',
   'Id': 'شناسه فنی (ID)',
   'Name': 'عنوان فارسی (Name)',
   'Executable': 'قابل اجرا در موتور',
