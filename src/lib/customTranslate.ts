@@ -22,6 +22,30 @@ export const PersianTranslations: Record<string, string> = {
   'Append Gateway': 'افزودن درگاه تصمیمی',
   'Append Task': 'افزودن وظیفه جدید',
   'Append Intermediate/Boundary Event': 'افزودن رویداد میانی یا مرزی',
+  
+  // Color Picker & Misc
+  'Color': 'رنگ',
+  'Default': 'پیش‌فرض',
+  'Blue': 'آبی',
+  'Orange': 'نارنجی',
+  'Green': 'سبز',
+  'Red': 'قرمز',
+  'Purple': 'بنفش',
+  'Black': 'مشکی',
+  'White': 'سفید',
+  
+  // Minimap
+  'Open minimap': 'باز کردن نقشه کوچک',
+  'Close minimap': 'بستن نقشه کوچک',
+  
+  // Token Simulation
+  'Token Simulation': 'شبیه‌سازی توکن',
+  'Play': 'اجرا',
+  'Pause': 'توقف',
+  'Stop': 'پایان',
+  'Reset': 'بازنشانی',
+  'Log': 'لاگ',
+  'Toggle Token Simulation': 'فعال/غیرفعال‌سازی شبیه‌سازی توکن',
 
   // BPMN Lint
   '{errors} Errors, {warnings} Warnings': '{errors} خطا، {warnings} هشدار',
@@ -39,6 +63,14 @@ export const PersianTranslations: Record<string, string> = {
   'Append element': 'افزودن عنصر',
   'Change element': 'تغییر عنصر',
   'Search': 'جستجو',
+  'Start Event': 'رویداد شروع',
+  'End Event': 'رویداد پایان',
+  'START EVENT': 'رویداد شروع',
+  'END EVENT': 'رویداد پایان',
+  'TASK': 'وظیفه',
+  'Sequence Flow': 'جریان متوالی',
+  'SEQUENCE FLOW': 'جریان متوالی',
+  'EXCLUSIVE GATEWAY': 'درگاه انحصاری',
   'Gateways': 'درگاه‌ها (Gateways)',
   'Tasks': 'وظایف (Tasks)',
   'Events': 'رویدادها (Events)',
@@ -113,6 +145,8 @@ export const PersianTranslations: Record<string, string> = {
   'Extension properties': 'ویژگی‌های افزونه',
   'Properties': 'ویژگی‌ها',
   'PROCESS': 'فرآیند (PROCESS)',
+  'Process': 'فرآیند',
+  'bpmn:Process': 'فرآیند',
   'ID': 'شناسه (ID)',
   'Id': 'شناسه فنی (ID)',
   'Name': 'عنوان فارسی (Name)',
@@ -137,13 +171,6 @@ export const PersianTranslations: Record<string, string> = {
   'Validation': 'اعتبارسنجی',
   'Add Field': 'افزودن فیلد فرم جدید',
 
-  // Token Simulation translation keys (optional additions)
-  'Simulation': 'شبیه‌ساز',
-  'Pause': 'توقف موقت',
-  'Play': 'اجرا',
-  'Reset': 'شروع مجدد',
-  'Token Simulation': 'شبیه‌ساز جریان فرآیند (توکن)',
-
   // Validation / Lint errors
   'Element is missing label/name': 'عنصر فاقد عنوان یا برچسب مشخص است',
   'Process is missing start event': 'فرآیند فاقد رویداد شروع است',
@@ -152,6 +179,12 @@ export const PersianTranslations: Record<string, string> = {
   'Duplicate ID': 'شناسه عنصر تکراری است',
   'Start event must have outgoing sequence flow': 'رویداد شروع باید جریان خروجی داشته باشد',
   'End event must have incoming sequence flow': 'رویداد پایان باید جریان ورودی داشته باشد',
+  'Incoming flows do not join': 'جریان‌های ورودی متصل نشده‌اند (از درگاه استفاده کنید)',
+  'Gateway is superfluous. It only has one source and target.': 'درگاه اضافی است (فقط یک ورودی و یک خروجی دارد)',
+  'Gateway forks and joins': 'درگاه هم‌زمان نقش تقسیم‌کننده و ترکیب‌کننده را دارد',
+  'Flow splits implicitly': 'جریان بدون درگاه (Gateway) به چند شاخه تقسیم شده است',
+  'Element is not connected': 'عنصر به فرآیند متصل نیست',
+  'Element overlaps with other element': 'عنصر با عناصر دیگر تداخل دارد (روی هم افتاده‌اند)'
 };
 
 export default function customTranslate(template: string, replacements?: Record<string, any>) {

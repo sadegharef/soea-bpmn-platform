@@ -26,8 +26,42 @@ const rules: Record<string, (node: any, reporter: Reporter) => void> = {
       }
     }
   },
+  'fake-join-split': function(node, reporter) {
+    if (node.$type === 'bpmn:ExclusiveGateway' || node.$type === 'bpmn:ParallelGateway' || node.$type === 'bpmn:InclusiveGateway') {
+      const incoming = node.incoming ? node.incoming.length : 0;
+      const outgoing = node.outgoing ? node.outgoing.length : 0;
+      
+      if (incoming === 1 && outgoing === 1) {
+        reporter.report(node.id, 'درگاه (Gateway) نمی‌تواند فقط یک ورودی و یک خروجی داشته باشد.');
+      }
+      
+      if (incoming === 0 && node.$type !== 'bpmn:EventBasedGateway') {
+        reporter.report(node.id, 'درگاه (Gateway) باید حداقل یک جریان ورودی داشته باشد.');
+      }
+      
+      if (outgoing === 0) {
+        reporter.report(node.id, 'درگاه (Gateway) باید حداقل یک جریان خروجی داشته باشد.');
+      }
+    }
+  },
+  'conditional-flows': function(node, reporter) {
+    if (node.$type === 'bpmn:ExclusiveGateway' || node.$type === 'bpmn:InclusiveGateway') {
+      const outgoing = node.outgoing || [];
+      if (outgoing.length > 1) {
+        let hasCondition = false;
+        let hasDefault = !!node.default;
+        
+        for (const flow of outgoing) {
+           if (flow.conditionExpression) hasCondition = true;
+        }
+        
+        if (!hasCondition && !hasDefault) {
+          reporter.report(node.id, 'خروجی‌های درگاه انحصاری (هنگام چندشاخگی) باید دارای شرط (Condition) یا مسیر پیش‌فرض (Default Flow) باشند.');
+        }
+      }
+    }
+  },
   'no-duplicate-id': function(node, reporter) {
-    // BPMN modeler handles duplicate IDs natively, but we can report element names if empty
     if (node.$type && node.$type.startsWith('bpmn:') && node.$type !== 'bpmn:Definitions' && node.$type !== 'bpmn:Process') {
       if (!node.name || node.name.trim() === '') {
         // Warning if label is missing on tasks or events
@@ -60,7 +94,9 @@ const bpmnlintConfig = {
     rules: {
       'start-event-required': 'error',
       'end-event-required': 'error',
-      'no-duplicate-id': 'warn'
+      'no-duplicate-id': 'warn',
+      'fake-join-split': 'error',
+      'conditional-flows': 'warn'
     }
   }
 };

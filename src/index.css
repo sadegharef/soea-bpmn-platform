@@ -1,6 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 @import "tailwindcss";
 
+
 @import "bpmn-js/dist/assets/diagram-js.css";
 @import "bpmn-js/dist/assets/bpmn-font/css/bpmn.css";
 @import "@bpmn-io/properties-panel/assets/properties-panel.css";
@@ -58,7 +59,7 @@ html, body, #root {
 .bjs-container .djs-palette {
   left: auto !important;
   right: 20px !important;
-  top: 80px !important;
+  top: 20px !important;
   border-radius: 8px !important;
   box-shadow: 0 4px 12px rgba(0,0,0,0.08) !important;
   border: 1px solid #e2e8f0 !important;
@@ -67,7 +68,7 @@ html, body, #root {
 
 /* Simulation styling changes */
 .bts-token-simulation-bar {
-  top: 80px !important;
+  top: 20px !important;
   left: 20px !important;
   right: auto !important;
 }
@@ -206,43 +207,14 @@ html, body, #root {
 }
 
 /* Dark mode SVG elements */
-.dark-theme .djs-visual rect,
-.dark-theme .djs-visual circle,
-.dark-theme .djs-visual polygon {
-  stroke: #cbd5e1 !important;
-  fill: #1e293b !important;
-  stroke-width: 2px !important;
-}
-
-.dark-theme .djs-visual path {
-  stroke: #cbd5e1 !important;
-}
-
-.dark-theme .djs-visual text {
-  fill: #f8fafc !important;
-}
-
-.dark-theme .djs-outline {
-  stroke: #475569 !important;
-}
-
-.dark-theme .djs-shape.selected .djs-outline {
-  stroke: #3b82f6 !important;
-}
-
-.dark-theme .djs-shape.highlighted .djs-visual rect,
-.dark-theme .djs-shape.highlighted .djs-visual circle,
-.dark-theme .djs-shape.highlighted .djs-visual polygon {
-  stroke: #10b981 !important;
-}
 
 /* Context Pad RTL adjustments */
-.djs-context-pad {
+.djs-context-pad .entry { background-color: #ffffff !important; color: #334155 !important; } .djs-context-pad .entry:hover { background-color: #f1f5f9 !important; color: #0f172a !important; } .djs-context-pad {
   border-radius: 6px !important;
   box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
 }
 
-.dark-theme .djs-context-pad {
+.dark-theme .djs-context-pad .entry { background-color: #ffffff !important; color: #334155 !important; } .djs-context-pad .entry:hover { background-color: #f1f5f9 !important; color: #0f172a !important; } .djs-context-pad {
   background-color: #1e293b !important;
   border: 1px solid #334155 !important;
 }
@@ -269,7 +241,7 @@ html, body, #root {
   right: 20px !important; /* It shouldn't overlap palette if palette is top */
   left: auto !important;
 }
-.djs-minimap.open .toggle {
+.djs-minimap .toggle { color: #334155 !important; font-weight: 600 !important; } .djs-minimap.open .toggle {
   background: rgba(255, 255, 255, 0.8) !important;
   border-radius: 4px;
   margin: 4px;
@@ -279,7 +251,7 @@ html.dark-theme .djs-minimap {
   border-color: #334155 !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
 }
-html.dark-theme .djs-minimap.open .toggle {
+html.dark-theme .djs-minimap .toggle { color: #334155 !important; font-weight: 600 !important; } .djs-minimap.open .toggle {
   background: rgba(30, 41, 59, 0.8) !important;
   color: #f8fafc !important;
 }
@@ -411,7 +383,7 @@ html.dark-theme .djs-popup-body {
 /* BPMN Linter (bpmn-js-bpmnlint) styling overrides */
 
 /* Light Mode (Default) */
-.bjsl-button {
+.bjsl-button {  z-index: 10 !important;
   background-color: #ffffff !important;
   border: 1px solid #cbd5e1 !important;
   color: #334155 !important;
@@ -523,7 +495,7 @@ html.dark-theme .djs-popup-body {
 }
 
 /* Dark Mode Overrides */
-.dark-theme .bjsl-button {
+.dark-theme .bjsl-button {  z-index: 10 !important;
   background-color: #1e293b !important;
   border-color: #475569 !important;
   color: #f8fafc !important;
@@ -604,7 +576,7 @@ html.dark-theme .djs-popup-body {
 }
 
 /* Light Mode (Default) */
-.bjsl-button {
+.bjsl-button {  z-index: 10 !important;
   background-color: #ffffff !important;
   border: 1px solid #cbd5e1 !important;
   color: #334155 !important;
@@ -684,7 +656,7 @@ html.dark-theme .djs-popup-body {
 }
 
 /* Dark Mode Overrides */
-.dark-theme .bjsl-button {
+.dark-theme .bjsl-button {  z-index: 10 !important;
   background-color: #1e293b !important;
   border-color: #475569 !important;
   color: #f8fafc !important;
@@ -733,4 +705,186 @@ html.dark-theme .djs-popup-body {
 }
 .dark-theme .bjsl-issues .rule {
   color: #94a3b8 !important;
+}
+
+/* Dark mode and spacing overrides for bpmnlint */
+.bjsl-issues-top-right .bjsl-dropdown-content {
+  padding-bottom: 5px !important;
+  bottom: 25px !important; /* pull it closer */
+}
+
+.bjsl-issues-bottom-right .bjsl-dropdown-content {
+  padding-top: 5px !important;
+  top: 25px !important; /* pull it closer */
+}
+
+.dark-theme .bjsl-issues {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+.dark-theme .bjsl-issues .message,
+.dark-theme .bjsl-issues .rule,
+.dark-theme .bjsl-issues .bjsl-issue-heading {
+  color: #f8fafc !important;
+}
+
+/* Dark mode overrides for direct editing (text annotation/editing) */
+.dark-theme .djs-direct-editing-parent {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+  border-radius: 4px;
+}
+.dark-theme .djs-direct-editing-content {
+  color: #f8fafc !important;
+  background-color: #1e293b !important;
+}
+
+/* Grid toggle */
+.bpmn-container.no-grid, .bjs-container.no-grid {
+  background-image: none !important;
+}
+.dark-theme .bpmn-container.no-grid, .dark-theme .bjs-container.no-grid {
+  background-image: none !important;
+}
+
+/* Diff Badges */
+.diff-badge {
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: bold;
+  color: white;
+  white-space: nowrap;
+  z-index: 100;
+}
+.diff-added { background-color: #10b981; }
+.diff-changed { background-color: #f59e0b; }
+.diff-removed { background-color: #ef4444; }
+
+/* Dark mode for comments */
+.dark-theme .comments-container {
+  background: #1e293b !important;
+  color: white !important;
+  border-color: #334155 !important;
+}
+.dark-theme .comments-container textarea {
+  background: #0f172a !important;
+  color: white !important;
+  border-color: #334155 !important;
+}
+
+/* Fix Direct Editing in Dark Mode */
+.dark-theme .djs-direct-editing-parent,
+.dark-theme .djs-direct-editing-parent * {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+}
+.dark-theme .djs-direct-editing-content {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+  border: 1px solid #3b82f6 !important;
+  outline: none !important;
+}
+
+/* Fix Labels in dark mode */
+.dark-theme text.djs-label {
+  fill: #e2e8f0 !important;
+}
+
+/* Hide property panel group badges (like the gray dot) */
+.bio-properties-panel-group-header-badge {
+  display: none !important;
+}
+
+/* Fix Comments panel */
+.comments-container {
+  font-family: inherit !important;
+  direction: rtl;
+}
+.icon-comment::before { content: "💬 "; font-size: 14px; }
+.icon-delete::before { content: "🗑️ "; font-size: 12px; cursor: pointer; }
+.comments-overlay .toggle { cursor: pointer; }
+.comments-overlay { 
+  background-color: #f1f5f9; 
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.dark-theme .comments-overlay {
+  background-color: #1e293b;
+  border-color: #334155;
+  color: #f8fafc;
+}
+.comments-overlay .edit textarea {
+  width: 100%;
+  min-width: 150px;
+  min-height: 50px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  padding: 4px;
+  margin-top: 4px;
+  font-size: 12px;
+}
+.dark-theme .comments-overlay .edit textarea {
+  background-color: #0f172a;
+  color: #f8fafc;
+  border-color: #334155;
+}
+
+/* Fix Token Simulation Translation */
+.bts-toggle-mode {
+  font-size: 0 !important;
+}
+.bts-toggle-mode::before {
+  content: "شبیه‌سازی توکن";
+  font-size: 14px;
+  padding-left: 6px;
+}
+.bts-toggle-mode .bts-toggle {
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Fix Color Picker Titles */
+.djs-popup.color-picker .entry {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 4px 8px;
+}
+.djs-popup.color-picker .entry::after {
+  content: attr(title);
+  font-size: 12px;
+  color: inherit;
+  font-family: inherit;
+}
+.djs-popup.color-picker .entry img,
+.djs-popup.color-picker .entry svg {
+  width: 18px;
+  height: 18px;
+  margin: 0 !important;
+}
+
+/* Improve Minimap Viewport UX */
+.djs-minimap .viewport {
+  transition: x 0.2s ease-out, y 0.2s ease-out, width 0.2s ease-out, height 0.2s ease-out;
+}
+
+/* Canvas Dark Mode Inversion */
+.dark-theme .bjs-container > svg,
+.dark-theme .bpmn-container > svg {
+  filter: invert(0.88) hue-rotate(180deg);
+}
+
+/* Force hide all badges, dots, and bullets in properties panel */
+.bio-properties-panel ul, .bio-properties-panel li {
+  list-style: none !important;
+}
+.bio-properties-panel-list-badge,
+.bio-properties-panel-badge,
+.bio-properties-panel-dot {
+  display: none !important;
 }

@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import BpmnModeler from "bpmn-js/lib/Modeler";
 import { Diagram, DiagramListItem, DiagramVersion } from "../types";
-import bpmnlintConfig from "../lib/bpmnlintConfig";
+import packedBpmnlintConfig from "../lib/packedBpmnlintConfig";
+import DiffModal from "./DiffModal";
 
 // Core bpmn-js modules & extensions
 import {
@@ -14,6 +15,11 @@ import tokenSimulationModule from "bpmn-js-token-simulation";
 import { CreateAppendAnythingModule } from "bpmn-js-create-append-anything";
 import lintModule from "bpmn-js-bpmnlint";
 import { customTranslateModule } from "../lib/customTranslate";
+
+import { BpmnModdle } from "bpmn-moddle";
+import { diff } from "bpmn-js-differ";
+import embeddedCommentsModule from "bpmn-js-embedded-comments";
+import "bpmn-js-embedded-comments/assets/comments.css";
 
 // Export and PDF engines
 import { jsPDF } from "jspdf";
@@ -43,7 +49,11 @@ import {
   Sun,
   Trash2,
   Loader2,
-  Share2
+  Share2,
+  ZoomIn,
+  ZoomOut,
+  Focus,
+  GitCompare
 } from "lucide-react";
 
 export default function BpmnModelerApp() {
@@ -68,9 +78,14 @@ export default function BpmnModelerApp() {
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [isSaving, setIsSaving] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
+  const [diffingXmls, setDiffingXmls] = useState<{ oldXml: string, newXml: string } | null>(null);
   const [showNewModal, setShowNewModal] = useState(false);
   const [newProcessName, setNewProcessName] = useState("");
   const [copiedLink, setCopiedLink] = useState(false);
+  
+  const [showShortcuts, setShowShortcuts] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [showGrid, setShowGrid] = useState(true);
 
   // Load theme preference on mount
   useEffect(() => {
@@ -157,10 +172,11 @@ export default function BpmnModelerApp() {
         tokenSimulationModule,
         CreateAppendAnythingModule,
         lintModule,
-        customTranslateModule
+        customTranslateModule,
+        embeddedCommentsModule
       ],
       linting: {
-        bpmnlint: bpmnlintConfig,
+        bpmnlint: packedBpmnlintConfig,
         active: true
       }
     });
@@ -173,7 +189,7 @@ export default function BpmnModelerApp() {
       modeler.importXML(draft || currentDiagram.xml).then(() => {
         const canvas = modeler.get("canvas") as any;
         if (canvas) {
-          canvas.zoom("fit-viewport");
+          setTimeout(() => canvas.zoom("fit-viewport", "auto"), 100);
         }
         try {
           const minimap = modeler.get("minimap") as any;
@@ -196,13 +212,43 @@ export default function BpmnModelerApp() {
     };
 
     modeler.on("commandStack.changed", onCommandStackChanged);
+    
+    // Sync Process name changes from canvas/properties panel to our input
+    const onElementChanged = (e: any) => {
+      if (e.element && e.element.type === "bpmn:Process") {
+        const newName = e.element.businessObject?.name;
+        if (newName) {
+          setDiagramName(prev => prev !== newName ? newName : prev);
+        }
+      }
+    };
+    modeler.on("element.changed", onElementChanged);
 
     return () => {
       modeler.off("commandStack.changed", onCommandStackChanged);
+      modeler.off("element.changed", onElementChanged);
       modeler.destroy();
       modelerRef.current = null;
     };
   }, [selectedId]); // Recreate if selected ID changes to ensure clean registers
+
+  // Update diagram name in BPMN Process element when diagramName state changes
+  useEffect(() => {
+    if (!modelerRef.current || !diagramName) return;
+    try {
+      const elementRegistry = modelerRef.current.get("elementRegistry") as any;
+      if (!elementRegistry) return;
+      const processElement = elementRegistry.filter((e: any) => e.type === "bpmn:Process")[0];
+      if (processElement && processElement.businessObject.name !== diagramName) {
+        const modeling = modelerRef.current.get("modeling") as any;
+        if (modeling) {
+          modeling.updateProperties(processElement, { name: diagramName });
+        }
+      }
+    } catch(err) {
+      // Ignored: Modeler might not be ready yet
+    }
+  }, [diagramName]);
 
   // Toggle Theme
   const handleThemeToggle = () => {
@@ -454,8 +500,46 @@ export default function BpmnModelerApp() {
     });
   };
 
+  const handleZoom = (step: number) => {
+    if (modelerRef.current) {
+      const canvas = modelerRef.current.get("canvas") as any;
+      if (canvas) {
+        canvas.zoom(canvas.zoom() + step);
+      }
+    }
+  };
+
+  const handleFitViewport = () => {
+    if (modelerRef.current) {
+      const canvas = modelerRef.current.get("canvas") as any;
+      if (canvas) {
+        canvas.zoom("fit-viewport", "auto");
+      }
+    }
+  };
+
+  const handleCompareWithPrevious = async () => {
+    if (!currentDiagram || currentDiagram.versions.length < 2) {
+      alert("حداقل دو نسخه از فرآیند برای مقایسه نیاز است.");
+      return;
+    }
+    
+    try {
+      const currentXml = await modelerRef.current!.saveXML({ format: true });
+      const previousVersion = currentDiagram.versions[1]; 
+      
+      setDiffingXmls({
+        oldXml: previousVersion.xml,
+        newXml: currentXml.xml!
+      });
+    } catch(err) {
+      console.error("Error generating diff:", err);
+      alert("خطایی در ایجاد مقایسه رخ داد.");
+    }
+  };
+
   return (
-    <div className={`flex flex-col h-screen overflow-hidden text-slate-800 dark:text-slate-200 ${theme === "dark" ? "dark bg-[#0f172a]" : "bg-slate-50"}`} dir="rtl" id="bpmn-app-container">
+    <div className={`flex flex-col h-screen overflow-hidden text-slate-800 dark:text-slate-200 ${theme === "dark" ? "dark dark-theme bg-[#0f172a]" : "bg-slate-50"}`} dir="rtl" id="bpmn-app-container">
       {/* 1. Header Toolbar */}
       <header className="flex flex-wrap items-center justify-between gap-4 px-5 py-2.5 bg-white dark:bg-[#1e293b] border-b border-slate-200 dark:border-slate-800 shadow-sm z-10" id="app-header">
         <div className="flex items-center gap-4">
@@ -561,6 +645,18 @@ export default function BpmnModelerApp() {
             <History className="w-4 h-4" />
           </button>
 
+          {/* Compare Button */}
+          {currentDiagram && currentDiagram.versions.length >= 2 && (
+            <button
+              onClick={handleCompareWithPrevious}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition relative cursor-pointer text-xs font-semibold ${diffingXmls ? "bg-amber-100 border-amber-300 text-amber-700 dark:bg-amber-900/40 dark:border-amber-700 dark:text-amber-400" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"}`}
+              title="تفاوت‌ها با نسخه قبلی ثبت‌شده را نمایش می‌دهد"
+            >
+              <GitCompare className="w-4 h-4" />
+              <span className="hidden md:inline">Diff</span>
+            </button>
+          )}
+
           {/* Export Actions */}
           <div className="flex items-center gap-1">
             <button
@@ -579,16 +675,16 @@ export default function BpmnModelerApp() {
               id="export-png-btn"
             >
               <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-500" />
-              <span className="hidden lg:inline">PNG عالی</span>
+              <span className="hidden lg:inline">PNG</span>
             </button>
             <button
               onClick={handleExportPDF}
               className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition"
-              title="خروجی فایل سند PDF برداری واقعی"
+              title="خروجی فایل سند PDF واقعی"
               id="export-pdf-btn"
             >
               <FileDown className="w-3.5 h-3.5 text-rose-500" />
-              <span className="hidden lg:inline">PDF برداری</span>
+              <span className="hidden lg:inline">PDF</span>
             </button>
           </div>
 
@@ -601,6 +697,23 @@ export default function BpmnModelerApp() {
           >
             <Share2 className="w-3.5 h-3.5 text-indigo-500" />
             <span>{copiedLink ? "لینک کپی شد" : "اشتراک‌گذاری"}</span>
+          </button>
+
+          {/* Help & Settings */}
+          <button
+            onClick={() => setShowShortcuts(true)}
+            className="p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition"
+            title="راهنما و کلیدهای میانبر"
+          >
+            <HelpCircle className="w-4 h-4" />
+          </button>
+          
+          <button
+            onClick={() => setShowSettings(true)}
+            className="p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition"
+            title="تنظیمات پلتفرم"
+          >
+            <Settings className="w-4 h-4" />
           </button>
 
           {/* Theme switcher */}
@@ -634,7 +747,7 @@ export default function BpmnModelerApp() {
       <div className="flex flex-1 relative overflow-hidden" id="main-workspace">
         {/* Dynamic History Overlay Drawer / Popover */}
         {isHistoryOpen && currentDiagram && (
-          <div className="absolute top-0 right-0 w-80 h-full bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 shadow-2xl z-20 flex flex-col p-4 animate-in slide-in-from-right duration-200" id="history-drawer">
+          <div className="absolute top-0 right-0 w-80 h-full bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 shadow-2xl z-[9999] flex flex-col p-4 animate-in slide-in-from-right duration-200" id="history-drawer">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 mb-4">
               <div className="flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400 font-bold">
                 <History className="w-5 h-5" />
@@ -693,15 +806,21 @@ export default function BpmnModelerApp() {
 
         {/* Core Canvas stage container */}
         <div className="flex-1 relative h-full flex flex-col overflow-hidden" id="canvas-wrapper">
-          {/* Active Autosave/Draft status ticker overlay */}
-          <div className="absolute top-4 right-4 z-10 flex items-center gap-1.5 bg-white/90 dark:bg-slate-900/90 border border-slate-200/60 dark:border-slate-700/60 px-3 py-1.5 rounded-full text-xs font-semibold shadow-sm backdrop-blur">
-            <span className={`w-2 h-2 rounded-full ${isSavingDraft ? "bg-orange-500 animate-pulse" : "bg-emerald-500"}`} />
-            <span className="text-slate-600 dark:text-slate-300">
-              {isSavingDraft ? "در حال ثبت تغییرات بوم..." : "ذخیره خودکار پیش‌نویس فعال است"}
-            </span>
+          {/* Zoom Controls */}
+          <div className={`absolute bottom-24 left-6 flex flex-col gap-1 rounded-lg shadow border border-slate-200 dark:border-slate-700 p-1 z-10 ${theme === "dark" ? "bg-slate-800" : "bg-white"}`}>
+            <button onClick={handleFitViewport} className="p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md" title="فیت کردن صفحه">
+              <Focus className="w-5 h-5" />
+            </button>
+            <div className="w-full h-px bg-slate-200 dark:bg-slate-700 my-0.5"></div>
+            <button onClick={() => handleZoom(0.2)} className="p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md" title="بزرگ‌نمایی">
+              <ZoomIn className="w-5 h-5" />
+            </button>
+            <button onClick={() => handleZoom(-0.2)} className="p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md" title="کوچک‌نمایی">
+              <ZoomOut className="w-5 h-5" />
+            </button>
           </div>
 
-          <div ref={canvasContainerRef} className="w-full h-full bpmn-container" id="bpmn-canvas-element" dir="ltr" />
+          <div ref={canvasContainerRef} className={`w-full h-full bpmn-container ${!showGrid ? 'no-grid' : ''}`} id="bpmn-canvas-element" dir="ltr" />
         </div>
 
         {/* 3. Right Sidebar Properties Panel (Collapsible) */}
@@ -732,23 +851,83 @@ export default function BpmnModelerApp() {
       <footer className="h-8 bg-slate-50 dark:bg-[#1e293b] border-t border-slate-200 dark:border-slate-800 px-4 flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 shrink-0 select-none">
         <div className="flex items-center gap-4">
           <span>وضعیت: آماده به کار</span>
-          <span className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 block animate-pulse"></span>
-            <span>اتصال به سرور برقرار است</span>
-          </span>
           <span className="hidden sm:inline border-r border-slate-300 dark:border-slate-700 pr-4">
             کلیه حقوق هم برای آزمایشگاه معماری سازمانی دانشگاه یزد محفوظ است.
           </span>
         </div>
-        <div className="flex gap-4 font-mono">
-          <span>BPMN 2.0.2 Modeler Core</span>
-          <span>v5.2.1-corporate</span>
+        <div className="flex gap-4 font-sans font-medium text-xs">
+          <span>نسخه ۱.۰.۰</span>
         </div>
       </footer>
 
       {/* 4. Modals */}
+      
+      {diffingXmls && (
+        <DiffModal
+          oldXml={diffingXmls.oldXml}
+          newXml={diffingXmls.newXml}
+          onClose={() => setDiffingXmls(null)}
+          theme={theme}
+        />
+      )}
+
+      {/* Settings Modal */}
+      {showSettings && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[9999] animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-sm w-full p-6">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 mb-4">
+              <h3 className="font-bold text-lg text-slate-900 dark:text-white">تنظیمات پلتفرم</h3>
+              <button onClick={() => setShowSettings(false)} className="text-slate-400 hover:text-slate-700 dark:hover:text-white transition">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <label className="flex items-center justify-between cursor-pointer group">
+                <div>
+                  <span className="block text-sm font-semibold text-slate-900 dark:text-slate-200">نمایش پس‌زمینه نقطه‌ای</span>
+                  <span className="block text-xs text-slate-500 mt-1">غیرفعال کردن آن برای خروجی‌های پاک‌تر مفید است</span>
+                </div>
+                <div className="relative inline-flex items-center">
+                  <input type="checkbox" checked={showGrid} onChange={(e) => setShowGrid(e.target.checked)} className="sr-only peer" />
+                  <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-blue-600"></div>
+                </div>
+              </label>
+            </div>
+            <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+              <button onClick={() => setShowSettings(false)} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold shadow-sm hover:bg-blue-700 transition">تایید</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Shortcuts Modal */}
+      {showShortcuts && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[9999] animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-md w-full p-6">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 mb-4">
+              <h3 className="font-bold text-lg text-slate-900 dark:text-white">راهنما و کلیدهای میانبر</h3>
+              <button onClick={() => setShowShortcuts(false)} className="text-slate-400 hover:text-slate-700 dark:hover:text-white transition">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="space-y-2 h-64 overflow-y-auto pl-2 text-sm text-slate-600 dark:text-slate-300" dir="ltr">
+              <div className="flex justify-between py-2 border-b border-slate-100 dark:border-slate-800/50"><span className="text-right w-full pr-4">باز کردن فایل</span><kbd className="whitespace-nowrap font-mono bg-slate-100 dark:bg-slate-800 px-2 rounded">Ctrl + O</kbd></div>
+              <div className="flex justify-between py-2 border-b border-slate-100 dark:border-slate-800/50"><span className="text-right w-full pr-4">بازگردانی</span><kbd className="whitespace-nowrap font-mono bg-slate-100 dark:bg-slate-800 px-2 rounded">Ctrl + Z</kbd></div>
+              <div className="flex justify-between py-2 border-b border-slate-100 dark:border-slate-800/50"><span className="text-right w-full pr-4">انجام مجدد</span><kbd className="whitespace-nowrap font-mono bg-slate-100 dark:bg-slate-800 px-2 rounded">Ctrl + Y</kbd></div>
+              <div className="flex justify-between py-2 border-b border-slate-100 dark:border-slate-800/50"><span className="text-right w-full pr-4">کپی</span><kbd className="whitespace-nowrap font-mono bg-slate-100 dark:bg-slate-800 px-2 rounded">Ctrl + C</kbd></div>
+              <div className="flex justify-between py-2 border-b border-slate-100 dark:border-slate-800/50"><span className="text-right w-full pr-4">چسباندن</span><kbd className="whitespace-nowrap font-mono bg-slate-100 dark:bg-slate-800 px-2 rounded">Ctrl + V</kbd></div>
+              <div className="flex justify-between py-2 border-b border-slate-100 dark:border-slate-800/50"><span className="text-right w-full pr-4">انتخاب همه</span><kbd className="whitespace-nowrap font-mono bg-slate-100 dark:bg-slate-800 px-2 rounded">Ctrl + A</kbd></div>
+              <div className="flex justify-between py-2 border-b border-slate-100 dark:border-slate-800/50"><span className="text-right w-full pr-4">ویرایش مستقیم</span><kbd className="whitespace-nowrap font-mono bg-slate-100 dark:bg-slate-800 px-2 rounded">E</kbd></div>
+              <div className="flex justify-between py-2 border-b border-slate-100 dark:border-slate-800/50"><span className="text-right w-full pr-4">ابزار دست</span><kbd className="whitespace-nowrap font-mono bg-slate-100 dark:bg-slate-800 px-2 rounded">H</kbd></div>
+              <div className="flex justify-between py-2 border-b border-slate-100 dark:border-slate-800/50"><span className="text-right w-full pr-4">ابزار کمند</span><kbd className="whitespace-nowrap font-mono bg-slate-100 dark:bg-slate-800 px-2 rounded">L</kbd></div>
+              <div className="flex justify-between py-2 border-b border-slate-100 dark:border-slate-800/50"><span className="text-right w-full pr-4">ابزار فضا</span><kbd className="whitespace-nowrap font-mono bg-slate-100 dark:bg-slate-800 px-2 rounded">S</kbd></div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showNewModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200" id="create-modal-overlay">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-[9999] animate-in fade-in duration-200" id="create-modal-overlay">
           <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-md w-full p-6 animate-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 mb-4">
               <h3 className="font-bold text-lg text-slate-900 dark:text-white">ایجاد فرآیند جدید BPMN</h3>
