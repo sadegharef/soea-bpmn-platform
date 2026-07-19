@@ -742,10 +742,10 @@ html.dark-theme .djs-popup-body {
 }
 
 /* Grid toggle */
-.bpmn-container.no-grid, .bjs-container.no-grid {
+.bpmn-container.no-grid .bjs-container, .bjs-container.no-grid {
   background-image: none !important;
 }
-.dark-theme .bpmn-container.no-grid, .dark-theme .bjs-container.no-grid {
+.dark-theme .bpmn-container.no-grid .bjs-container, .dark-theme .bjs-container.no-grid {
   background-image: none !important;
 }
 
@@ -762,6 +762,7 @@ html.dark-theme .djs-popup-body {
 .diff-added { background-color: #10b981; }
 .diff-changed { background-color: #f59e0b; }
 .diff-removed { background-color: #ef4444; }
+.diff-layout { background-color: #3b82f6; }
 
 /* Dark mode for comments */
 .dark-theme .comments-container {

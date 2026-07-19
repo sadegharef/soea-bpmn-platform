@@ -137,11 +137,22 @@ export default function BpmnModelerApp() {
         const xmlToLoad = localDraft || data.xml;
 
         if (modelerRef.current) {
-          modelerRef.current.importXML(xmlToLoad).catch((err) => {
-            console.error("Error loading XML into modeler:", err);
-            // Fallback to original
-            modelerRef.current?.importXML(data.xml);
-          });
+          modelerRef.current.importXML(xmlToLoad)
+            .then(() => {
+              const canvas = modelerRef.current?.get("canvas");
+              if (canvas) {
+                setTimeout(() => canvas.zoom("fit-viewport", "auto"), 100);
+              }
+            })
+            .catch((err) => {
+              console.error("Error loading XML into modeler:", err);
+              modelerRef.current?.importXML(data.xml).then(() => {
+                const canvas = modelerRef.current?.get("canvas");
+                if (canvas) {
+                  setTimeout(() => canvas.zoom("fit-viewport", "auto"), 100);
+                }
+              });
+            });
         }
       })
       .catch((err) => console.error("Error fetching diagram:", err));
@@ -189,7 +200,7 @@ export default function BpmnModelerApp() {
       modeler.importXML(draft || currentDiagram.xml).then(() => {
         const canvas = modeler.get("canvas") as any;
         if (canvas) {
-          setTimeout(() => canvas.zoom("fit-viewport", "auto"), 100);
+          setTimeout(() => canvas.zoom("fit-viewport", "auto"), 250);
         }
         try {
           const minimap = modeler.get("minimap") as any;
