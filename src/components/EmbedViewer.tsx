@@ -1,7 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
-import BpmnViewer from "bpmn-js/lib/NavigatedViewer";
+import BpmnModeler from "bpmn-js/lib/Modeler";
+
+
 import { Diagram } from "../types";
-import { Eye, RotateCcw, ZoomIn, ZoomOut, AlertCircle, Loader2 } from "lucide-react";
+import { Eye, RotateCcw, ZoomIn, ZoomOut, AlertCircle, Loader2, X } from "lucide-react";
 
 interface EmbedViewerProps {
   processId: string;
@@ -9,7 +11,7 @@ interface EmbedViewerProps {
 
 export default function EmbedViewer({ processId }: EmbedViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const viewerRef = useRef<BpmnViewer | null>(null);
+  const viewerRef = useRef<BpmnModeler | null>(null);
   const [diagram, setDiagram] = useState<Diagram | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -62,11 +64,24 @@ export default function EmbedViewer({ processId }: EmbedViewerProps) {
       viewerRef.current.destroy();
     }
 
-    const viewer = new BpmnViewer({
+    const viewer = new BpmnModeler({
+        
       container: containerRef.current
     });
 
     viewerRef.current = viewer;
+
+
+    viewer.get('eventBus').on('selection.changed', (e: any) => {
+      if (e.newSelection && e.newSelection.length > 0) {
+        setSelectedElementId(e.newSelection[0].id);
+        setIsCommentsOpen(true);
+      } else {
+        setSelectedElementId(null);
+        setIsCommentsOpen(false);
+      }
+    });
+
 
     viewer.importXML(diagram.xml)
       .then(() => {
@@ -87,6 +102,53 @@ export default function EmbedViewer({ processId }: EmbedViewerProps) {
       }
     };
   }, [diagram, loading, error]);
+
+  useEffect(() => {
+    if (!viewerRef.current || !selectedElementId || !isCommentsOpen) return;
+    
+    const renderComments = () => {
+      const elementRegistry = viewerRef.current.get('elementRegistry');
+      const element = elementRegistry.get(selectedElementId);
+      if (!element) return;
+      
+      const docs = element.businessObject.documentation || [];
+      const commentsDoc = docs.find((d:any) => d.textFormat === 'text/x-comments');
+      let commentsList = [];
+      if (commentsDoc) {
+        try { commentsList = JSON.parse(commentsDoc.text); } catch(e){}
+      }
+      
+      const listContainer = document.getElementById('embed-comments-list');
+      const noCommentsMsg = document.getElementById('embed-no-comments');
+      
+      if (listContainer) {
+        Array.from(listContainer.children).forEach(child => {
+          if (child.id !== 'embed-no-comments') child.remove();
+        });
+        
+        if (commentsList.length > 0) {
+          if (noCommentsMsg) noCommentsMsg.style.display = 'none';
+          
+          commentsList.forEach((comment: any) => {
+            const div = document.createElement('div');
+            div.className = 'bg-slate-50 dark:bg-slate-800 p-3 rounded-lg border border-slate-100 dark:border-slate-700 mb-3';
+            div.innerHTML = `
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-xs font-bold text-slate-700 dark:text-slate-300">${comment.author}</span>
+                <span class="text-[10px] text-slate-400">${new Date(comment.date).toLocaleDateString('fa-IR')}</span>
+              </div>
+              <p class="text-sm text-slate-600 dark:text-slate-400 whitespace-pre-wrap">${comment.text}</p>
+            `;
+            listContainer.insertBefore(div, noCommentsMsg);
+          });
+        } else {
+          if (noCommentsMsg) noCommentsMsg.style.display = 'block';
+        }
+      }
+    };
+    
+    renderComments();
+  }, [selectedElementId, isCommentsOpen]);
 
   const handleZoomIn = () => {
     if (viewerRef.current) {

@@ -18,8 +18,11 @@ import { customTranslateModule } from "../lib/customTranslate";
 
 import { BpmnModdle } from "bpmn-moddle";
 import { diff } from "bpmn-js-differ";
-import embeddedCommentsModule from "bpmn-js-embedded-comments";
-import "bpmn-js-embedded-comments/assets/comments.css";
+import { customContextPadModule } from "../lib/CustomContextPadProvider";
+import CustomContextPadProvider from "../lib/customContextPadProvider";
+
+import "bpmn-js-bpmnlint/dist/assets/css/bpmn-js-bpmnlint.css";
+import "bpmn-js-token-simulation/assets/css/bpmn-js-token-simulation.css";
 
 // Export and PDF engines
 import { jsPDF } from "jspdf";
@@ -53,8 +56,10 @@ import {
   ZoomIn,
   ZoomOut,
   Focus,
-  GitCompare
-} from "lucide-react";
+  GitCompare,
+  MoreVertical,
+  MessageSquare
+, FilePlus, Upload, Link2, Image, ChevronDown, Globe} from "lucide-react";
 
 export default function BpmnModelerApp() {
   const canvasContainerRef = useRef<HTMLDivElement>(null);
@@ -74,9 +79,13 @@ export default function BpmnModelerApp() {
 
   // UI toggles
   const [isPropertiesOpen, setIsPropertiesOpen] = useState(true);
+  const [activeRightTab, setActiveRightTab] = useState<"details" | "comments">("details");
+  const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
-  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [theme, setTheme] = useState<"light" | "dark">("light"); 
+  const [lang, setLang] = useState<"fa" | "en">("fa");
   const [isSaving, setIsSaving] = useState(false);
+  const [viewingVersion, setViewingVersion] = useState<number | null>(null);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [diffingXmls, setDiffingXmls] = useState<{ oldXml: string, newXml: string } | null>(null);
   const [showNewModal, setShowNewModal] = useState(false);
@@ -85,6 +94,7 @@ export default function BpmnModelerApp() {
   
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [showGrid, setShowGrid] = useState(true);
 
   // Load theme preference on mount
@@ -96,6 +106,17 @@ export default function BpmnModelerApp() {
   }, []);
 
   // Sync theme class with document root
+  
+  useEffect(() => {
+    (window as any).__BPMN_LANG__ = lang;
+    document.documentElement.dir = lang === 'fa' ? 'rtl' : 'ltr';
+    if (modelerRef.current) {
+      // Force re-render of canvas by recreating it or we can just trigger a save and re-import
+      // but it's simpler to just let the user know, or re-instantiate.
+      // Re-instantiating the modeler is safest for complete translation change.
+    }
+  }, [lang]);
+
   useEffect(() => {
     if (theme === "dark") {
       document.documentElement.classList.add("dark-theme");
@@ -173,7 +194,7 @@ export default function BpmnModelerApp() {
         parent: propertiesPanelRef.current
       },
       minimap: {
-        open: true
+        open: false
       },
       additionalModules: [
         BpmnPropertiesPanelModule,
@@ -184,7 +205,8 @@ export default function BpmnModelerApp() {
         CreateAppendAnythingModule,
         lintModule,
         customTranslateModule,
-        embeddedCommentsModule
+        customContextPadModule,
+        { __init__: ["customContextPad"], customContextPad: ["type", CustomContextPadProvider] }
       ],
       linting: {
         bpmnlint: packedBpmnlintConfig,
@@ -204,7 +226,7 @@ export default function BpmnModelerApp() {
         }
         try {
           const minimap = modeler.get("minimap") as any;
-          if (minimap) minimap.open();
+          if (minimap) minimap.close();
         } catch (e) { }
       });
     }
@@ -235,6 +257,23 @@ export default function BpmnModelerApp() {
     };
     modeler.on("element.changed", onElementChanged);
 
+    modeler.get('eventBus').on('selection.changed', (e: any) => {
+      if (e.newSelection && e.newSelection.length > 0) {
+        setSelectedElementId(e.newSelection[0].id);
+      } else {
+        setSelectedElementId(null);
+      }
+    });
+
+    modeler.get('eventBus').on('comments.open', (e: any) => {
+      setIsPropertiesOpen(true);
+      setActiveRightTab("comments");
+      setSelectedElementId(e.element.id);
+      setTimeout(() => {
+        document.getElementById('new-comment-input')?.focus();
+      }, 100);
+    });
+
     return () => {
       modeler.off("commandStack.changed", onCommandStackChanged);
       modeler.off("element.changed", onElementChanged);
@@ -260,6 +299,70 @@ export default function BpmnModelerApp() {
       // Ignored: Modeler might not be ready yet
     }
   }, [diagramName]);
+
+  // Render Comments when selected element changes or a new comment is added
+  useEffect(() => {
+    if (!modelerRef.current || !selectedElementId || activeRightTab !== 'comments') return;
+    
+    const renderComments = () => {
+      const elementRegistry = modelerRef.current?.get('elementRegistry');
+      if (!elementRegistry) return;
+      const element = elementRegistry.get(selectedElementId);
+      if (!element) return;
+      
+      const docs = element.businessObject.documentation || [];
+      const commentsDoc = docs.find((d:any) => d.textFormat === 'text/x-comments');
+      let commentsList = [];
+      if (commentsDoc) {
+        try { commentsList = JSON.parse(commentsDoc.text); } catch(e){}
+      }
+      
+      const listContainer = document.getElementById('comments-list');
+      const noCommentsMsg = document.getElementById('no-comments-msg');
+      
+      if (listContainer) {
+        // Clear all previous comments
+        Array.from(listContainer.children).forEach(child => {
+          if (child.id !== 'no-comments-msg') child.remove();
+        });
+        
+        if (commentsList.length > 0) {
+          if (noCommentsMsg) noCommentsMsg.style.display = 'none';
+          
+          commentsList.forEach((comment: any) => {
+            const div = document.createElement('div');
+            div.className = 'bg-white dark:bg-slate-900 p-3 rounded-lg border border-slate-100 dark:border-slate-800 mb-3 relative group';
+            div.innerHTML = `
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-xs font-bold text-slate-700 dark:text-slate-300">${comment.author}</span>
+                <span class="text-[10px] text-slate-400">${new Date(comment.date).toLocaleDateString('fa-IR')}</span>
+              </div>
+              <p class="text-sm text-slate-600 dark:text-slate-400 whitespace-pre-wrap">${comment.text}</p>
+            `;
+            listContainer.insertBefore(div, noCommentsMsg);
+          });
+        } else {
+          if (noCommentsMsg) noCommentsMsg.style.display = 'block';
+        }
+      }
+    };
+    
+    renderComments();
+    
+    // Listen for changes on this specific element's documentation
+    const eventBus = modelerRef.current.get('eventBus');
+    const changeListener = (e: any) => {
+       if (e.element && e.element.id === selectedElementId) {
+         renderComments();
+       }
+    };
+    eventBus.on('element.changed', changeListener);
+    
+    return () => {
+      eventBus.off('element.changed', changeListener);
+    };
+  }, [selectedElementId, activeRightTab, currentDiagram]); // Re-run if diagram changes
+
 
   // Toggle Theme
   const handleThemeToggle = () => {
@@ -338,15 +441,34 @@ export default function BpmnModelerApp() {
   // Delete Current Process
   const handleDeleteProcess = async () => {
     if (!currentDiagram) return;
-    if (!window.confirm(`آیا از حذف فرآیند "${currentDiagram.name}" اطمینان دارید؟`)) return;
-
+    if (!window.confirm(lang === 'fa' ? `آیا از حذف فرآیند "${currentDiagram.name}" اطمینان دارید؟` : `Are you sure you want to delete "${currentDiagram.name}"?`)) return;
     try {
-      const res = await fetch(`/api/diagrams/${currentDiagram.id}`, {
-        method: "DELETE"
-      });
+      const res = await fetch(`/api/diagrams/${currentDiagram.id}`, { method: "DELETE" });
       if (res.ok) {
         localStorage.removeItem(`bpmn-draft-${currentDiagram.id}`);
-        loadDiagramList();
+        const response = await fetch("/api/diagrams");
+        const list = await response.json();
+        setDiagrams(list);
+        if (list.length > 0) {
+          setSelectedId(list[0].id);
+          const diagramRes = await fetch(`/api/diagrams/${list[0].id}`);
+          const diag = await diagramRes.json();
+          setCurrentDiagram(diag);
+          setDiagramName(diag.name);
+          setIsHistoryOpen(false);
+          if (modelerRef.current) {
+            await modelerRef.current.importXML(diag.xml);
+            const canvas = modelerRef.current.get("canvas") as any;
+            canvas.zoom("fit-viewport");
+          }
+        } else {
+          setCurrentDiagram(null);
+          setDiagramName(lang === 'fa' ? "فرآیند جدید" : "New Process");
+          setSelectedId(null);
+          if (modelerRef.current) {
+             modelerRef.current.clear();
+          }
+        }
       }
     } catch (err) {
       console.error(err);
@@ -357,6 +479,7 @@ export default function BpmnModelerApp() {
   const handleLoadVersion = async (v: DiagramVersion) => {
     if (!modelerRef.current) return;
     try {
+      setViewingVersion(v.version === currentDiagram.latestVersion ? null : v.version);
       await modelerRef.current.importXML(v.xml);
       // Set draft so edits of this restored version will auto-persist
       if (currentDiagram) {
@@ -578,7 +701,7 @@ export default function BpmnModelerApp() {
             >
               {diagrams.map((d) => (
                 <option key={d.id} value={d.id}>
-                  {d.name} (نسخه {d.latestVersion})
+                  {d.name} (آخرین نسخه: {d.latestVersion})
                 </option>
               ))}
             </select>
@@ -668,94 +791,98 @@ export default function BpmnModelerApp() {
             </button>
           )}
 
-          {/* Export Actions */}
-          <div className="flex items-center gap-1">
+                    {/* Action Buttons */}
+          <div className="flex items-center gap-2">
             <button
-              onClick={handleExportSVG}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition"
-              title="دانلود فایل گرافیکی برداری SVG"
-              id="export-svg-btn"
+              onClick={() => setLang(lang === "fa" ? "en" : "fa")}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition font-medium text-sm"
+              title={lang === "fa" ? "Switch to English" : "تغییر به فارسی"}
             >
-              <FileCode className="w-3.5 h-3.5 text-orange-500" />
-              <span className="hidden lg:inline">SVG</span>
+              <Globe className="w-4 h-4" />
+              <span className="hidden sm:inline">{lang === "fa" ? "EN" : "فا"}</span>
             </button>
+
             <button
-              onClick={() => handleExportPNG(3)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition"
-              title="خروجی عکس با کیفیت عالی 3x PNG"
-              id="export-png-btn"
+              onClick={handleThemeToggle}
+              className="p-1.5 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition"
+              title={theme === "dark" ? (lang === 'fa' ? "حالت روشن" : "Light Mode") : (lang === 'fa' ? "حالت تاریک" : "Dark Mode")}
             >
-              <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-500" />
-              <span className="hidden lg:inline">PNG</span>
+              {theme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </button>
-            <button
-              onClick={handleExportPDF}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition"
-              title="خروجی فایل سند PDF واقعی"
-              id="export-pdf-btn"
-            >
-              <FileDown className="w-3.5 h-3.5 text-rose-500" />
-              <span className="hidden lg:inline">PDF</span>
-            </button>
+
+            <div className="w-px h-6 bg-slate-200 dark:bg-slate-700 mx-1"></div>
+
+            <div className="relative group">
+              <button
+                className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium text-sm shadow-sm"
+              >
+                <Share2 className="w-4 h-4" />
+                <span className="hidden sm:inline">{lang === 'fa' ? 'اشتراک و خروجی' : 'Share & Export'}</span>
+                <ChevronDown className="w-4 h-4" />
+              </button>
+              <div className="absolute right-0 top-full mt-1 w-56 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 origin-top-right">
+                
+                <button
+                  onClick={handleCopyEmbedLink}
+                  className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 text-right"
+                >
+                  <Link2 className="w-4 h-4 text-indigo-500" />
+                  {copiedLink ? (lang === 'fa' ? "لینک کپی شد" : "Link Copied") : (lang === 'fa' ? "کپی لینک اشتراک" : "Copy Share Link")}
+                </button>
+
+                <div className="h-px w-full bg-slate-100 dark:bg-slate-700 my-1"></div>
+
+                <button
+                  onClick={handleExportSVG}
+                  className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 text-right border-t border-slate-100 dark:border-slate-700"
+                >
+                  <FileCode className="w-4 h-4 text-orange-500" />
+                  {lang === 'fa' ? 'خروجی تصویر (SVG)' : 'Export Image (SVG)'}
+                </button>
+
+                <button
+                  onClick={() => handleExportPNG(3)}
+                  className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 text-right border-t border-slate-100 dark:border-slate-700"
+                >
+                  <FileSpreadsheet className="w-4 h-4 text-emerald-500" />
+                  {lang === 'fa' ? 'خروجی عکس (PNG)' : 'Export Image (PNG)'}
+                </button>
+                
+                <button
+                  onClick={handleExportPDF}
+                  className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 text-right border-t border-slate-100 dark:border-slate-700"
+                >
+                  <FileDown className="w-4 h-4 text-rose-500" />
+                  {lang === 'fa' ? 'خروجی فایل سند (PDF)' : 'Export Document (PDF)'}
+                </button>
+
+              </div>
+            </div>
           </div>
-
-          {/* Share/Embed link generator */}
-          <button
-            onClick={handleCopyEmbedLink}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border transition ${copiedLink ? "bg-emerald-50 text-emerald-600 border-emerald-200" : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700"}`}
-            title="کپی لینک مستقیم پیش‌نمایش تعاملی"
-            id="share-link-btn"
-          >
-            <Share2 className="w-3.5 h-3.5 text-indigo-500" />
-            <span>{copiedLink ? "لینک کپی شد" : "اشتراک‌گذاری"}</span>
-          </button>
-
-          {/* Help & Settings */}
-          <button
-            onClick={() => setShowShortcuts(true)}
-            className="p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition"
-            title="راهنما و کلیدهای میانبر"
-          >
-            <HelpCircle className="w-4 h-4" />
-          </button>
-          
-          <button
-            onClick={() => setShowSettings(true)}
-            className="p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition"
-            title="تنظیمات پلتفرم"
-          >
-            <Settings className="w-4 h-4" />
-          </button>
-
-          {/* Theme switcher */}
-          <button
-            onClick={handleThemeToggle}
-            className="p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition"
-            title="تغییر تم رنگی"
-            id="theme-switcher-btn"
-          >
-            {theme === "light" ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
-          </button>
-
-          {/* Commit Save Version Button */}
-          <button
-            onClick={handleSaveVersion}
-            disabled={isSaving}
-            className="flex items-center gap-1.5 px-4 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-600 text-white rounded-lg font-bold transition shadow-sm cursor-pointer"
-            id="save-version-btn"
-          >
-            {isSaving ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Save className="w-4 h-4" />
-            )}
-            <span>ذخیره نسخه</span>
-          </button>
         </div>
       </header>
 
+      
       {/* 2. Main Modeler Body Workspace */}
+      {viewingVersion !== null && (
+        <div className="bg-amber-100 dark:bg-amber-900/40 border-b border-amber-200 dark:border-amber-800 px-4 py-2 flex items-center justify-between z-10">
+          <div className="text-amber-800 dark:text-amber-200 text-sm font-semibold flex items-center gap-2">
+            <span>شما در حال مشاهده نسخه قدیمی ({viewingVersion}) هستید.</span>
+          </div>
+          <button 
+            onClick={async () => {
+              if (!modelerRef.current || !currentDiagram) return;
+              await modelerRef.current.importXML(currentDiagram.xml);
+              setViewingVersion(null);
+            }}
+            className="text-xs bg-amber-200 dark:bg-amber-800 text-amber-900 dark:text-amber-100 px-3 py-1 rounded hover:bg-amber-300 dark:hover:bg-amber-700 transition"
+          >
+            بازگشت به آخرین تغییرات
+          </button>
+        </div>
+      )}
       <div className="flex flex-1 relative overflow-hidden" id="main-workspace">
+
         {/* Dynamic History Overlay Drawer / Popover */}
         {isHistoryOpen && currentDiagram && (
           <div className="absolute top-0 right-0 w-80 h-full bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 shadow-2xl z-[9999] flex flex-col p-4 animate-in slide-in-from-right duration-200" id="history-drawer">
@@ -835,6 +962,7 @@ export default function BpmnModelerApp() {
         </div>
 
         {/* 3. Right Sidebar Properties Panel (Collapsible) */}
+        
         <div
           className={`h-full border-r border-slate-200 dark:border-slate-800 flex flex-col transition-all duration-300 relative ${isPropertiesOpen ? "w-80 lg:w-96" : "w-0"}`}
           id="properties-panel-container"
@@ -843,20 +971,116 @@ export default function BpmnModelerApp() {
           <button
             onClick={() => setIsPropertiesOpen(!isPropertiesOpen)}
             className="absolute top-1/2 -left-3.5 transform -translate-y-1/2 w-7 h-10 bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-300 hover:text-slate-800 rounded-l-md shadow-md z-10 flex items-center justify-center cursor-pointer transition"
-            title={isPropertiesOpen ? "بستن پنل جزئیات" : "باز کردن پنل جزئیات"}
+            title={isPropertiesOpen ? "بستن پنل" : "باز کردن پنل"}
             id="properties-toggle-btn"
           >
             {isPropertiesOpen ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
           </button>
 
-          <div className="flex-1 h-full overflow-y-auto properties-panel-parent bg-white dark:bg-[#1e293b]">
-            <div className="px-4 py-3 bg-slate-50 dark:bg-slate-900/40 font-bold border-b border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-300 uppercase tracking-wider">
-              ویژگی‌های عنصر انتخاب‌شده
+          <div className="flex-1 h-full overflow-hidden flex flex-col bg-white dark:bg-[#1e293b]">
+            <div className="flex items-center border-b border-slate-200 dark:border-slate-800">
+              <button 
+                onClick={() => setActiveRightTab("details")}
+                className={`flex-1 py-3 text-xs font-bold transition border-b-2 ${activeRightTab === 'details' ? 'border-blue-600 text-blue-600 dark:text-blue-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400'}`}
+              >
+                جزئیات عنصر
+              </button>
+              <button 
+                onClick={() => setActiveRightTab("comments")}
+                className={`flex-1 py-3 text-xs font-bold transition border-b-2 ${activeRightTab === 'comments' ? 'border-blue-600 text-blue-600 dark:text-blue-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400'}`}
+              >
+                نظرات و گفتگوها
+              </button>
             </div>
-            <div ref={propertiesPanelRef} className="w-full" id="bpmn-properties-element" />
+            
+            <div className={`flex-1 h-full overflow-y-auto properties-panel-parent ${activeRightTab === 'details' ? 'block' : 'hidden'}`}>
+              <div ref={propertiesPanelRef} className="w-full" id="bpmn-properties-element" />
+            </div>
+            
+            
+            <div className={`flex-1 h-full overflow-y-auto p-4 flex flex-col ${activeRightTab === 'comments' ? 'block' : 'hidden'}`}>
+              {!selectedElementId ? (
+                <div className="flex flex-col items-center justify-center h-full text-center p-4">
+                  <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
+                    <MessageSquare className="w-8 h-8 text-slate-400" />
+                  </div>
+                  <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-2">{lang === 'fa' ? 'همکاری با تیم' : 'Team Collaboration'}</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed max-w-[250px]">
+                    {lang === 'fa' 
+                      ? 'برای ثبت نظر روی یک عنصر، روی آن کلیک کرده و آیکون کامنت 💬 را از منوی شناور انتخاب کنید.' 
+                      : 'To add a comment, click on an element and select the comment icon 💬 from the context pad.'}
+                  </p>
+                </div>
+              ) : (
+                <div className="flex flex-col h-full">
+                  <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-4 pb-2 border-b border-slate-100 dark:border-slate-800">
+                    {lang === 'fa' ? 'نظرات عنصر' : 'Element Comments'}
+                  </h3>
+                  <div className="flex-1 overflow-y-auto space-y-3 mb-4" id="comments-list">
+                    {/* Comments will be rendered here by a separate component or effect */}
+                    <div className="text-xs text-slate-500 text-center italic mt-10" id="no-comments-msg">
+                       {lang === 'fa' ? 'اولین نظر را شما ثبت کنید...' : 'Be the first to comment...'}
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-2 mt-auto">
+                    <textarea 
+                      id="new-comment-input"
+                      className="w-full h-20 text-sm p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none"
+                      placeholder={lang === 'fa' ? "نظر خود را بنویسید..." : "Write your comment..."}
+                    ></textarea>
+                    <button 
+                      onClick={() => {
+                        const input = document.getElementById('new-comment-input') as HTMLTextAreaElement;
+                        if (!input || !input.value.trim() || !modelerRef.current || !selectedElementId) return;
+                        
+                        const elementRegistry = modelerRef.current.get('elementRegistry');
+                        const element = elementRegistry.get(selectedElementId);
+                        const modeling = modelerRef.current.get('modeling');
+                        const moddle = modelerRef.current.get('moddle');
+                        
+                        if (!element) return;
+                        
+                        const docs = element.businessObject.documentation || [];
+                        const commentsDoc = docs.find((d:any) => d.textFormat === 'text/x-comments');
+                        let commentsList = [];
+                        if (commentsDoc) {
+                          try { commentsList = JSON.parse(commentsDoc.text); } catch(e){}
+                        }
+                        
+                        commentsList.push({
+                          id: Date.now().toString(),
+                          text: input.value.trim(),
+                          date: new Date().toISOString(),
+                          author: editorName
+                        });
+                        
+                        const newDoc = moddle.create('bpmn:Documentation', {
+                          text: JSON.stringify(commentsList),
+                          textFormat: 'text/x-comments'
+                        });
+                        
+                        modeling.updateProperties(element, {
+                          documentation: [newDoc, ...docs.filter((d:any) => d.textFormat !== 'text/x-comments')]
+                        });
+                        
+                        input.value = '';
+                        // Trigger re-render of comments list
+                        const eventBus = modelerRef.current.get('eventBus');
+                        eventBus.fire('comments.updated', { element: element });
+                      }}
+                      className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition"
+                    >
+                      {lang === 'fa' ? 'ثبت نظر' : 'Post Comment'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
           </div>
         </div>
-      </div>
+
+            </div>
 
       {/* 3.5 Bottom Status Footer */}
       <footer className="h-8 bg-slate-50 dark:bg-[#1e293b] border-t border-slate-200 dark:border-slate-800 px-4 flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 shrink-0 select-none">

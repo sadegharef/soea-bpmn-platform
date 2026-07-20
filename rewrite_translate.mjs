@@ -1,4 +1,6 @@
+import fs from 'fs';
 
+const code = `
 export const translations = {
   fa: {
     // Tools / Palette
@@ -293,3 +295,6 @@ export default function customTranslate(template: string, replacements?: Record<
 export const customTranslateModule = {
   translate: ['value', customTranslate]
 };
+`;
+
+fs.writeFileSync('src/lib/customTranslate.ts', code);
