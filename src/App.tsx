@@ -8,7 +8,7 @@ export default function App() {
   useEffect(() => {
     const handleLocationCheck = () => {
       const path = window.location.pathname;
-      if (path.startsWith("/view/")) {
+      if (path.startsWith("/view/") || path.startsWith("/embed/")) {
         const parts = path.split("/");
         const processId = parts[2];
         if (processId) {

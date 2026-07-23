@@ -1,22 +1,31 @@
 export default function CustomContextPadProvider(contextPad: any, eventBus: any, translate: any) {
   contextPad.registerProvider(this);
-  
+
   this.getContextPadEntries = function(element: any) {
     return function(entries: any) {
-      entries['add.comment'] = {
+      
+      entries['element.details'] = {
         group: 'edit',
-        className: 'bpmn-icon-discussion',
-        title: translate('Comments'),
+        html: '<div class="entry" title="Details" style="display:flex; align-items:center; justify-content:center;"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-info"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></div>',
+        title: translate('Details'),
         action: {
           click: function(event: any, element: any) {
-            eventBus.fire('commentsPanel.toggle', { element: element });
+            eventBus.fire('details.open', { element: element });
           }
         }
       };
-      
-      // Optionally remove the default edit entry if needed
-      // delete entries['replace'];
-      
+
+      entries['element.comments'] = {
+        group: 'edit',
+        html: '<div class="entry" title="Comments" style="display:flex; align-items:center; justify-content:center;"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-message-square"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>',
+        title: translate('Comments'),
+        action: {
+          click: function(event: any, element: any) {
+            eventBus.fire('comments.open', { element: element });
+          }
+        }
+      };
+
       return entries;
     };
   };

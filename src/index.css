@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 @import "tailwindcss";
 
 
@@ -11,7 +11,9 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --font-sans: "Vazirmatn", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-sans-rtl: "Vazirmatn", ui-sans-serif, system-ui, sans-serif;
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 }
 
@@ -214,16 +216,8 @@ html, body, #root {
 /* Dark mode SVG elements */
 
 /* Context Pad RTL adjustments */
-.djs-context-pad .entry { background-color: #ffffff !important; color: #334155 !important; } .djs-context-pad .entry:hover { background-color: #f1f5f9 !important; color: #0f172a !important; } .djs-context-pad {
-  border-radius: 6px !important;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
-}
 
-.dark-theme .djs-context-pad .entry { background-color: #ffffff !important; color: #334155 !important; } .djs-context-pad .entry:hover { background-color: #f1f5f9 !important; color: #0f172a !important; } .djs-context-pad {
-  background-color: #1e293b !important;
-  border: 1px solid #334155 !important;
-}
-
+.dark-theme 
 .dark-theme .djs-context-pad .entry {
   background-color: #1e293b !important;
   color: #94a3b8 !important;
@@ -463,14 +457,7 @@ html.dark-theme .djs-popup-body {
 }
 
 /* Dropdown and issues box */
-.bjsl-issues {
-  background-color: #ffffff !important;
-  border: 1px solid #e2e8f0 !important;
-  border-radius: 8px !important;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1) !important;
-  font-family: var(--font-sans) !important;
-  padding: 12px !important;
-}
+.djs-parent > .bjsl-dropdown .bjsl-issues, 
 
 .bjsl-issues .bjsl-issue-heading {
   color: #0f172a !important;
@@ -552,11 +539,7 @@ html.dark-theme .djs-popup-body {
   color: #ffffff !important;
 }
 
-.dark-theme .bjsl-issues {
-  background-color: #1e293b !important;
-  border-color: #334155 !important;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5) !important;
-}
+.dark-theme .djs-parent > .bjsl-dropdown .bjsl-issues, 
 
 .dark-theme .bjsl-issues .bjsl-issue-heading {
   color: #f8fafc !important;
@@ -573,10 +556,7 @@ html.dark-theme .djs-popup-body {
 }
 
 /* Also overlay issues tooltips */
-.dark-theme .bjsl-dropdown-content {
-  background-color: #1e293b !important;
-  border-color: #334155 !important;
-}
+.dark-theme .djs-parent > .bjsl-dropdown .bjsl-dropdown-content, 
 
 /* Light Mode (Default) */
 .bjsl-button {  z-index: 10 !important;
@@ -627,17 +607,7 @@ html.dark-theme .djs-popup-body {
 }
 
 /* Linter overlays */
-.bjsl-issues {
-  background-color: #ffffff !important;
-  border: 1px solid #cbd5e1 !important;
-  color: #334155 !important;
-  box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1) !important;
-  border-radius: 8px !important;
-  padding: 12px !important;
-  font-family: var(--font-sans) !important;
-  direction: rtl;
-  min-width: 250px;
-}
+.djs-parent > .bjsl-dropdown .bjsl-issues, 
 .bjsl-issues .message {
   color: #334155 !important;
   font-weight: 500;
@@ -652,11 +622,7 @@ html.dark-theme .djs-popup-body {
 .bjsl-issues li {
   margin-bottom: 8px !important;
 }
-.bjsl-issues-bottom-right .bjsl-dropdown-content {
-  padding-bottom: 12px;
-  bottom: 100%;
-  left: 0;
-}
+.bjsl-issues-bottom-right .djs-parent > .bjsl-dropdown .bjsl-dropdown-content, 
 
 /* Dark Mode Overrides */
 .dark-theme .bjsl-button {  z-index: 10 !important;
@@ -697,12 +663,7 @@ html.dark-theme .djs-popup-body {
   color: #ffffff !important;
 }
 
-.dark-theme .bjsl-issues {
-  background-color: #1e293b !important;
-  border-color: #475569 !important;
-  color: #f8fafc !important;
-  box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5), 0 8px 10px -6px rgba(0,0,0,0.5) !important;
-}
+.dark-theme .djs-parent > .bjsl-dropdown .bjsl-issues, 
 .dark-theme .bjsl-issues .message {
   color: #f8fafc !important;
 }
@@ -712,16 +673,8 @@ html.dark-theme .djs-popup-body {
 
 /* pull it closer */
 
-.bjsl-issues-bottom-right .bjsl-dropdown-content {
-  padding-top: 5px !important;
-  top: 25px !important; /* pull it closer */
-}
-.dark-theme .bjsl-issues {
-  background-color: #1e293b !important;
-  border-color: #334155 !important;
-  color: #f8fafc !important;
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-}
+.bjsl-issues-bottom-right .djs-parent > .bjsl-dropdown .bjsl-dropdown-content, 
+.dark-theme .djs-parent > .bjsl-dropdown .bjsl-issues, 
 .dark-theme .bjsl-issues .message,
 .dark-theme .bjsl-issues .rule,
 .dark-theme .bjsl-issues .bjsl-issue-heading {
@@ -833,16 +786,6 @@ html.dark-theme .djs-popup-body {
 
 /* Fix Token Simulation Translation */
 
-.bts-toggle-mode::before {
-  content: "شبیه‌سازی توکن";
-  font-size: 14px;
-  padding-left: 6px;
-}
-.bts-toggle-mode .bts-toggle {
-  font-size: 14px;
-  display: inline-flex;
-  align-items: center;
-}
 
 /* Fix Color Picker Titles */
 .djs-popup.color-picker .entry {
@@ -995,17 +938,53 @@ html.dark-theme .djs-popup-body {
   right: auto !important;
   bottom: auto !important;
   z-index: 100 !important;
+  width: 44px !important;
+  height: 44px !important;
+  border-radius: 8px !important;
+  background-color: white !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
+  font-size: 0 !important;
+  color: transparent !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="%233b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>') !important;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+}
+
+.bts-toggle-mode::before, .bts-toggle-mode .bts-toggle {
+  display: none !important;
+}
+
+.dark-theme .bts-toggle-mode {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="%2394a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>') !important;
+}
+
+.bjs-container.simulation .bts-toggle-mode, .bts-toggle-mode:hover {
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="%23ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>') !important;
+  background-color: #10D070 !important;
 }
 
 .bts-palette, .bts-token-simulation-bar {
   position: absolute !important;
-  top: 70px !important;
+  top: 74px !important;
   left: 20px !important;
   right: auto !important;
   z-index: 99 !important;
 }
 
-/* BPMN Linter Styling for Bottom Panel */
+/* Hide Simulation Log Badges */
+.bts-log .scope {
+  display: none !important;
+}
+
+/* Global BPMN Linter Styling for Bottom Panel */
+
 .bjsl-button {
   bottom: 0 !important;
   left: 20px !important;
@@ -1016,54 +995,17 @@ html.dark-theme .djs-popup-body {
   z-index: 200 !important;
 }
 
-.bjsl-dropdown {
-  position: fixed !important;
-  bottom: 0 !important;
-  left: 0 !important;
-  width: 100% !important;
-  height: 300px !important;
-  max-height: 40vh !important;
-  background: white !important;
-  border-top: 1px solid #e2e8f0 !important;
-  box-shadow: 0 -10px 25px rgba(0,0,0,0.05) !important;
-  z-index: 150 !important;
-  display: none !important; /* handled by .open later */
-}
+/* We only want to target the global dropdown, not the ones in overlays. 
+   The global dropdown is a direct child of .bjs-container usually, or at least not inside .bjsl-overlay. */
 
-.bjsl-dropdown.open {
-  display: block !important;
-}
 
-.bjsl-dropdown-content {
-  position: relative !important;
-  top: 0 !important;
-  left: 0 !important;
-  width: 100% !important;
-  height: 100% !important;
-  min-width: 100% !important;
-  padding: 0 !important;
-  background: transparent !important;
-}
 
-.bjsl-issues {
-  background: transparent !important;
-  border: none !important;
-  padding: 16px 24px !important;
-  height: 100% !important;
-  width: 100% !important;
-  overflow-y: auto !important;
-}
 
-.dark-theme .bjsl-dropdown {
-  background: #1e293b !important;
-  border-color: #334155 !important;
-}
 
-.dark-theme .bjsl-issues {
-  background: transparent !important;
-  color: #f1f5f9 !important;
-}
 
+
+
+.dark-theme 
 /* Token Simulation Icon only */
 .bts-toggle-mode {
   position: absolute !important;
@@ -1085,22 +1027,11 @@ html.dark-theme .djs-popup-body {
   align-items: center !important;
   justify-content: center !important;
 }
-.bts-toggle-mode .bts-toggle {
-  margin: 0 !important;
-  font-size: 20px !important;
-  color: #64748b !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-}
 .dark-theme .bts-toggle-mode {
   background-color: #1e293b !important;
   border-color: #334155 !important;
 }
-.dark-theme .bts-toggle-mode .bts-toggle {
-  color: #94a3b8 !important;
-}
-
+.dark-theme 
 .bts-palette, .bts-token-simulation-bar {
   position: absolute !important;
   top: 74px !important;
@@ -1108,3 +1039,37 @@ html.dark-theme .djs-popup-body {
   right: auto !important;
   z-index: 99 !important;
 }
+
+.bts-toggle-mode {
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="%233b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>') !important;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+}
+.dark-theme .bts-toggle-mode {
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="%2394a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>') !important;
+}
+.bjs-container.simulation .bts-toggle-mode, .bts-toggle-mode:hover {
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="%23ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>') !important;
+  background-color: #10D070 !important;
+}
+.bts-toggle-mode::before, .bts-toggle-mode .bts-toggle {
+  display: none !important;
+}
+
+/* Hide default lint toggle button since we have a custom panel */
+.bjsl-button {
+  display: none !important;
+}
+
+/* Hide hover pop-up for lint issues but keep the red dots */
+.bjsl-dropdown {
+  display: none !important;
+}
+
+/* Hide hover pop-up for lint issues but keep the red dots */
+.bjsl-dropdown {
+  display: none !important;
+}
+
+html[dir="rtl"] { --font-sans: var(--font-sans-rtl); }
+html[dir="ltr"] { --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif; }

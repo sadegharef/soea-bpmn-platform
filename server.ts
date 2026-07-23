@@ -41,6 +41,7 @@ interface Diagram {
   createdAt: string;
   updatedAt: string;
   latestVersion: number;
+  tags?: string[];
   xml: string;
   versions: DiagramVersion[];
 }
@@ -59,6 +60,7 @@ function readDB(): DB {
       initialDB.diagrams[demoId] = {
         id: demoId,
         name: "فرآیند نمونه خرید سازمانی",
+        tags: ["نمونه", "AS-IS", "فرآیند خرید"],
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         latestVersion: 1,
@@ -99,12 +101,13 @@ readDB();
 // Get all diagrams (metadata only or small payloads)
 app.get("/api/diagrams", (req, res) => {
   const db = readDB();
-  const list = Object.values(db.diagrams).map(({ id, name, createdAt, updatedAt, latestVersion }) => ({
+  const list = Object.values(db.diagrams).map(({ id, name, createdAt, updatedAt, latestVersion, tags }) => ({
     id,
     name,
     createdAt,
     updatedAt,
     latestVersion,
+    tags: tags || [],
   }));
   res.json(list);
 });
@@ -121,7 +124,7 @@ app.get("/api/diagrams/:id", (req, res) => {
 
 // Create new diagram
 app.post("/api/diagrams", (req, res) => {
-  const { name, editorName } = req.body;
+  const { name, editorName, tags } = req.body;
   if (!name) {
     return res.status(400).json({ error: "Name is required" });
   }
@@ -133,6 +136,7 @@ app.post("/api/diagrams", (req, res) => {
   const newDiagram: Diagram = {
     id,
     name,
+    tags: tags || [],
     createdAt: now,
     updatedAt: now,
     latestVersion: 1,

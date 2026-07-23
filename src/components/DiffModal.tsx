@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { t } from '../lib/i18n';
 import BpmnViewer from 'bpmn-js/lib/NavigatedViewer';
 import { BpmnModdle } from 'bpmn-moddle';
 import { diff } from 'bpmn-js-differ';
-import embeddedCommentsModule from "bpmn-js-embedded-comments";
 import { X, SplitSquareHorizontal, FileText, MousePointerClick } from 'lucide-react';
 
 interface DiffModalProps {
@@ -10,9 +10,10 @@ interface DiffModalProps {
   newXml: string;
   onClose: () => void;
   theme: 'light' | 'dark';
+  lang: 'fa' | 'en';
 }
 
-export default function DiffModal({ oldXml, newXml, onClose, theme }: DiffModalProps) {
+export default function DiffModal({ oldXml, newXml, onClose, theme, lang }: DiffModalProps) {
   const leftCanvasRef = useRef<HTMLDivElement>(null);
   const rightCanvasRef = useRef<HTMLDivElement>(null);
   const leftViewerRef = useRef<any>(null);
@@ -23,11 +24,11 @@ export default function DiffModal({ oldXml, newXml, onClose, theme }: DiffModalP
   useEffect(() => {
     leftViewerRef.current = new BpmnViewer({
       container: leftCanvasRef.current,
-      additionalModules: [embeddedCommentsModule]
+      additionalModules: []
     });
     rightViewerRef.current = new BpmnViewer({
       container: rightCanvasRef.current,
-      additionalModules: [embeddedCommentsModule]
+      additionalModules: []
     });
     const loadAndDiff = async () => {
       try {
@@ -90,7 +91,7 @@ export default function DiffModal({ oldXml, newXml, onClose, theme }: DiffModalP
         // Changed - in both
         Object.keys(diffChanges._changed).forEach(id => {
           try {
-            const html = '<div class="diff-badge diff-changed">~ تغییر یافته (Changed)</div>';
+            const html = `<div class="diff-badge diff-changed">${t("diffBadgeChanged", lang)}</div>`;
             leftOverlays.add(id, 'diff', { position: { bottom: 0, left: 0 }, html });
             rightOverlays.add(id, 'diff', { position: { bottom: 0, left: 0 }, html });
             
@@ -108,7 +109,7 @@ export default function DiffModal({ oldXml, newXml, onClose, theme }: DiffModalP
         // Layout Changed - in both
         Object.keys(diffChanges._layoutChanged).forEach(id => {
           try {
-            const html = '<div class="diff-badge diff-layout">✥ جابجا شده (Layout)</div>';
+            const html = `<div class="diff-badge diff-layout">${t("diffBadgeLayout", lang)}</div>`;
             leftOverlays.add(id, 'diff', { position: { bottom: 0, left: 0 }, html });
             rightOverlays.add(id, 'diff', { position: { bottom: 0, left: 0 }, html });
 
@@ -186,7 +187,7 @@ export default function DiffModal({ oldXml, newXml, onClose, theme }: DiffModalP
         <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 p-4">
           <div className="flex items-center gap-3 text-slate-800 dark:text-slate-200">
             <SplitSquareHorizontal className="w-5 h-5 text-indigo-500" />
-            <h2 className="font-bold text-lg">مقایسه نسخه‌ها (Diff)</h2>
+            <h2 className="font-bold text-lg">{t("diffModalTitle", lang)}</h2>
           </div>
           <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-white transition rounded-md hover:bg-slate-100 dark:hover:bg-slate-800">
             <X className="w-5 h-5" />
@@ -202,7 +203,7 @@ export default function DiffModal({ oldXml, newXml, onClose, theme }: DiffModalP
             </div>
             <div className="p-4 space-y-3">
               {changeDescriptions.length === 0 ? (
-                <div className="text-sm text-slate-500 dark:text-slate-400 text-center py-4">هیچ تغییری یافت نشد.</div>
+                <div className="text-sm text-slate-500 dark:text-slate-400 text-center py-4">{t("noChangesFound", lang)}</div>
               ) : (
                 changeDescriptions.map((desc, idx) => (
                   <div 
@@ -213,10 +214,10 @@ export default function DiffModal({ oldXml, newXml, onClose, theme }: DiffModalP
                     <MousePointerClick className="w-4 h-4 absolute top-2 left-2 text-slate-300 dark:text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity" />
                     <span className="font-semibold text-slate-800 dark:text-slate-200 break-all pl-6">{desc.name}</span>
                     <div className="flex items-center gap-1.5 text-xs">
-                      {desc.type === 'added' && <><span className="w-2 h-2 rounded-full bg-emerald-500"></span><span className="text-emerald-600 dark:text-emerald-400 font-medium">جدید (Added)</span></>}
-                      {desc.type === 'removed' && <><span className="w-2 h-2 rounded-full bg-red-500"></span><span className="text-red-600 dark:text-red-400 font-medium">حذف شده (Removed)</span></>}
-                      {desc.type === 'changed' && <><span className="w-2 h-2 rounded-full bg-amber-500"></span><span className="text-amber-600 dark:text-amber-400 font-medium">تغییر ویژگی‌ها (Changed)</span></>}
-                      {desc.type === 'layout' && <><span className="w-2 h-2 rounded-full bg-blue-500"></span><span className="text-blue-600 dark:text-blue-400 font-medium">جابجایی (Layout)</span></>}
+                      {desc.type === 'added' && <><span className="w-2 h-2 rounded-full bg-emerald-500"></span><span className="text-emerald-600 dark:text-emerald-400 font-medium">{t("diffAdded", lang)}</span></>}
+                      {desc.type === 'removed' && <><span className="w-2 h-2 rounded-full bg-red-500"></span><span className="text-red-600 dark:text-red-400 font-medium">{t("diffRemoved", lang)}</span></>}
+                      {desc.type === 'changed' && <><span className="w-2 h-2 rounded-full bg-amber-500"></span><span className="text-amber-600 dark:text-amber-400 font-medium">{t("diffChanged", lang)}</span></>}
+                      {desc.type === 'layout' && <><span className="w-2 h-2 rounded-full bg-blue-500"></span><span className="text-blue-600 dark:text-blue-400 font-medium">{t("diffLayout", lang)}</span></>}
                     </div>
                   </div>
                 ))

@@ -11,6 +11,7 @@ export interface Diagram {
   createdAt: string;
   updatedAt: string;
   latestVersion: number;
+  tags?: string[];
   xml: string;
   versions: DiagramVersion[];
 }
@@ -21,4 +22,5 @@ export interface DiagramListItem {
   createdAt: string;
   updatedAt: string;
   latestVersion: number;
+  tags?: string[];
 }

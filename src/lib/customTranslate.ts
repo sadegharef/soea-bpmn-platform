@@ -152,6 +152,7 @@ export const translations = {
 
     // Create / Append Palette
     'Create element': 'ایجاد عنصر',
+
     'Append element': 'افزودن عنصر',
     'Change element': 'تغییر عنصر',
     'Search': 'جستجو',
@@ -262,7 +263,13 @@ export const translations = {
     'Not all paths reach an end event. some flows just stop': 'همه مسیرها به یک رویداد پایان ختم نمی‌شوند. برخی جریان‌ها قطع می‌شوند.',
     'An element is a dead end. the process gets stuck here because there is no outgoing flow': 'عنصر بن‌بست است. فرآیند در اینجا گیر می‌کند زیرا هیچ جریان خروجی وجود ندارد.',
     'An element has no label. add a name to clarify its purpose': 'عنصر بدون عنوان است. یک نام برای شفاف‌سازی هدف آن اضافه کنید.',
-    'This process has multiple start events. use only one to avoid confusion': 'این فرآیند چند رویداد شروع دارد. برای جلوگیری از سردرگمی تنها از یکی استفاده کنید.'
+    'This process has multiple start events. use only one to avoid confusion': 'این فرآیند چند رویداد شروع دارد. برای جلوگیری از سردرگمی تنها از یکی استفاده کنید.',
+    'Token Simulation': 'شبیه‌سازی فرآیند',
+    'Simulation Log': 'تاریخچه شبیه‌سازی',
+    'Process finished': 'پایان فرآیند',
+    'Process entered': 'شروع فرآیند',
+    'Element is an implicit end': 'این عنصر به‌طور ضمنی فرآیند را پایان می‌دهد (باید به رویداد پایان متصل شود)',
+
   },
   en: {} // Return empty so it falls back to default English in bpmn-js
 };
