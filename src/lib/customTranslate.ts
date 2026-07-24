@@ -1,6 +1,17 @@
 
 export const translations = {
   fa: {
+    'Create start event': 'ایجاد رویداد شروع',
+    'Create end event': 'ایجاد رویداد پایان',
+    'Create gateway': 'ایجاد درگاه (Gateway)',
+    'Create task': 'ایجاد وظیفه (Task)',
+    'Create intermediate/boundary event': 'ایجاد رویداد میانی/مرزی',
+    'Create expanded sub-process': 'ایجاد زیرفرآیند باز شده',
+    'Create pool/participant': 'ایجاد استخر/مشارکت‌کننده',
+    'Create data object reference': 'ایجاد شیء داده',
+    'Create data store reference': 'ایجاد پایگاه داده',
+    'Create group': 'ایجاد گروه',
+    'Process started': 'شروع فرآیند',
     // Tools / Palette
     'Activate the hand tool': 'فعال کردن ابزار دست (کشیدن بوم)',
     'Activate the lasso tool': 'فعال کردن ابزار کمند (انتخاب چندتایی)',

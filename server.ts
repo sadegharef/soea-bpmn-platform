@@ -33,11 +33,13 @@ interface DiagramVersion {
   xml: string;
   timestamp: string;
   editorName: string;
+  editorNameEn?: string;
 }
 
 interface Diagram {
   id: string;
   name: string;
+  nameEn?: string;
   createdAt: string;
   updatedAt: string;
   latestVersion: number;
@@ -101,9 +103,10 @@ readDB();
 // Get all diagrams (metadata only or small payloads)
 app.get("/api/diagrams", (req, res) => {
   const db = readDB();
-  const list = Object.values(db.diagrams).map(({ id, name, createdAt, updatedAt, latestVersion, tags }) => ({
+  const list = Object.values(db.diagrams).map(({ id, name, nameEn, createdAt, updatedAt, latestVersion, tags }) => ({
     id,
     name,
+    nameEn,
     createdAt,
     updatedAt,
     latestVersion,
@@ -124,7 +127,7 @@ app.get("/api/diagrams/:id", (req, res) => {
 
 // Create new diagram
 app.post("/api/diagrams", (req, res) => {
-  const { name, editorName, tags } = req.body;
+  const { name, nameEn, editorName, editorNameEn, tags } = req.body;
   if (!name) {
     return res.status(400).json({ error: "Name is required" });
   }
@@ -136,6 +139,7 @@ app.post("/api/diagrams", (req, res) => {
   const newDiagram: Diagram = {
     id,
     name,
+    nameEn,
     tags: tags || [],
     createdAt: now,
     updatedAt: now,
@@ -146,7 +150,8 @@ app.post("/api/diagrams", (req, res) => {
         version: 1,
         xml: DEFAULT_BPMN_XML,
         timestamp: now,
-        editorName: editorName || "کاربر ناشناس"
+        editorName: editorName || "کاربر ناشناس",
+        editorNameEn: editorNameEn || "Unknown Editor"
       }
     ]
   };
@@ -159,7 +164,7 @@ app.post("/api/diagrams", (req, res) => {
 
 // Save new version
 app.put("/api/diagrams/:id", (req, res) => {
-  const { xml, editorName, name } = req.body;
+  const { xml, editorName, editorNameEn, name, nameEn } = req.body;
   if (!xml) {
     return res.status(400).json({ error: "XML content is required" });
   }
@@ -177,7 +182,8 @@ app.put("/api/diagrams/:id", (req, res) => {
     version: nextVersionNum,
     xml,
     timestamp: now,
-    editorName: editorName || "ویرایشگر ناشناس"
+    editorName: editorName || "ویرایشگر ناشناس",
+    editorNameEn: editorNameEn || "Unknown Editor"
   };
 
   diagram.xml = xml;
@@ -185,6 +191,9 @@ app.put("/api/diagrams/:id", (req, res) => {
   diagram.updatedAt = now;
   if (name) {
     diagram.name = name;
+  }
+  if (nameEn !== undefined) {
+    diagram.nameEn = nameEn;
   }
   diagram.versions.push(newVersion);
 

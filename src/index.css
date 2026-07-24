@@ -1073,3 +1073,13 @@ html.dark-theme .djs-popup-body {
 
 html[dir="rtl"] { --font-sans: var(--font-sans-rtl); }
 html[dir="ltr"] { --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif; }
+
+/* Hide token simulation id badges */
+.bts-log .scope,
+.bts-log .id,
+.bts-log .badge,
+.bts-log .identifier,
+.bts-log-entry .scope,
+.bts-log-entry .id {
+  display: none !important;
+}

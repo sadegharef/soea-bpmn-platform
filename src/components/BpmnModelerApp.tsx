@@ -74,24 +74,29 @@ export default function BpmnModelerApp() {
   const [isLintPanelOpen, setIsLintPanelOpen] = useState(true);
 
   // Form states
+  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [lang, setLang] = useState<"fa" | "en">("fa");
   const [diagramName, setDiagramName] = useState<string>("");
+  const [diagramNameEn, setDiagramNameEn] = useState<string>("");
   const [editorName, setEditorName] = useState<string>(() => {
     return localStorage.getItem("bpmn-editor-name") || t("defaultEditorName", lang);
   });
+  const [editorNameEn, setEditorNameEn] = useState<string>(() => {
+    return localStorage.getItem("bpmn_editor_name_en") || "Co-Pilot";
+  });
 
   // UI toggles
-  const [isPropertiesOpen, setIsPropertiesOpen] = useState(true);
+  const [isPropertiesOpen, setIsPropertiesOpen] = useState(false);
   const [activeRightTab, setActiveRightTab] = useState<"details" | "comments">("details");
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
-  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
-  const [theme, setTheme] = useState<"light" | "dark">("light"); 
-  const [lang, setLang] = useState<"fa" | "en">("fa");
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false); 
   const [isSaving, setIsSaving] = useState(false);
   const [viewingVersion, setViewingVersion] = useState<number | null>(null);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [diffingXmls, setDiffingXmls] = useState<{ oldXml: string, newXml: string } | null>(null);
   const [showNewModal, setShowNewModal] = useState(false);
   const [newProcessName, setNewProcessName] = useState("");
+  const [newProcessNameEn, setNewProcessNameEn] = useState("");
   const [newProcessTags, setNewProcessTags] = useState("");
   const [isTagsMenuOpen, setIsTagsMenuOpen] = useState(false);
   const [addTagInput, setAddTagInput] = useState("");
@@ -119,20 +124,106 @@ export default function BpmnModelerApp() {
   // Sync theme class with document root
   
   
-  // Fix hardcoded Token Simulation titles
+  
+  // Fix hardcoded titles (Token Simulation and Palette)
   useEffect(() => {
     const observer = new MutationObserver(() => {
+      // Token Simulation Toggle
       const toggleBtn = document.querySelector('.bts-toggle-mode');
       if (toggleBtn) {
         toggleBtn.setAttribute('title', lang === 'fa' ? 'شبیه‌سازی فرآیند' : 'Token Simulation');
       }
+      
+      // Token Simulation Log header
       const logHeader = document.querySelector('.bts-log .header');
-      if (logHeader && lang === 'fa' && logHeader.textContent?.includes('Simulation Log')) {
-        logHeader.textContent = logHeader.textContent.replace('Simulation Log', 'تاریخچه شبیه‌سازی');
+      if (logHeader) {
+        if (lang === 'fa' && logHeader.textContent?.includes('Simulation Log')) {
+          logHeader.textContent = logHeader.textContent.replace('Simulation Log', 'تاریخچه شبیه‌سازی');
+        } else if (lang === 'en' && logHeader.textContent?.includes('تاریخچه شبیه‌سازی')) {
+          logHeader.textContent = logHeader.textContent.replace('تاریخچه شبیه‌سازی', 'Simulation Log');
+        }
       }
+      
+      // Palette item titles
+      const paletteEntries = document.querySelectorAll('.djs-palette .entry');
+      paletteEntries.forEach(entry => {
+        const action = entry.getAttribute('data-action');
+        if (!action) return;
+        
+        let faTitle = "";
+        let enTitle = "";
+        
+        if (action === 'hand-tool') { faTitle = 'فعال کردن ابزار دست (کشیدن بوم)'; enTitle = 'Activate hand tool'; }
+        else if (action === 'lasso-tool') { faTitle = 'فعال کردن ابزار کمند (انتخاب چندتایی)'; enTitle = 'Activate lasso tool'; }
+        else if (action === 'space-tool') { faTitle = 'فعال کردن ابزار مدیریت فضا'; enTitle = 'Activate create/remove space tool'; }
+        else if (action === 'global-connect-tool') { faTitle = 'فعال کردن ابزار اتصال سراسری'; enTitle = 'Activate global connect tool'; }
+        else if (action === 'create.start-event') { faTitle = 'ایجاد رویداد شروع'; enTitle = 'Create StartEvent'; }
+        else if (action === 'create.end-event') { faTitle = 'ایجاد رویداد پایان'; enTitle = 'Create EndEvent'; }
+        else if (action === 'create.exclusive-gateway') { faTitle = 'ایجاد درگاه (Gateway)'; enTitle = 'Create Gateway'; }
+        else if (action === 'create.task') { faTitle = 'ایجاد وظیفه (Task)'; enTitle = 'Create Task'; }
+        else if (action === 'create.intermediate-event') { faTitle = 'ایجاد رویداد میانی یا مرزی'; enTitle = 'Create Intermediate/Boundary Event'; }
+        else if (action === 'create.data-object') { faTitle = 'ایجاد شیء داده'; enTitle = 'Create DataObjectReference'; }
+        else if (action === 'create.data-store') { faTitle = 'ایجاد پایگاه داده'; enTitle = 'Create DataStoreReference'; }
+        else if (action === 'create.participant-expanded') { faTitle = 'ایجاد استخر/مشارکت‌کننده'; enTitle = 'Create Pool/Participant'; }
+        else if (action === 'create.group') { faTitle = 'ایجاد گروه'; enTitle = 'Create Group'; }
+        else if (action === 'create.subprocess-expanded') { faTitle = 'ایجاد زیرفرآیند باز شده'; enTitle = 'Create expanded SubProcess'; }
+        
+        if (faTitle && enTitle) {
+          entry.setAttribute('title', lang === 'fa' ? faTitle : enTitle);
+        }
+      });
+      
+      // Context Pad titles
+      const padEntries = document.querySelectorAll('.djs-context-pad .entry');
+      padEntries.forEach(entry => {
+        const action = entry.getAttribute('data-action');
+        if (!action) return;
+        
+        let faTitle = "";
+        let enTitle = "";
+        
+        if (action === 'append.text-annotation') { faTitle = 'افزودن یادداشت متنی'; enTitle = 'Append text annotation'; }
+        else if (action === 'append.end-event') { faTitle = 'افزودن رویداد پایان'; enTitle = 'Append EndEvent'; }
+        else if (action === 'append.gateway') { faTitle = 'افزودن درگاه'; enTitle = 'Append Gateway'; }
+        else if (action === 'append.task') { faTitle = 'افزودن وظیفه'; enTitle = 'Append Task'; }
+        else if (action === 'append.intermediate-event') { faTitle = 'افزودن رویداد میانی یا مرزی'; enTitle = 'Append Intermediate/Boundary Event'; }
+        else if (action === 'delete') { faTitle = 'حذف عنصر'; enTitle = 'Remove'; }
+        else if (action === 'replace') { faTitle = 'تغییر نوع عنصر'; enTitle = 'Change type'; }
+        else if (action === 'connect') { faTitle = 'اتصال با جریان متوالی یا پیام'; enTitle = 'Connect using Sequence/MessageFlow or Association'; }
+        
+        if (faTitle && enTitle) {
+          entry.setAttribute('title', lang === 'fa' ? faTitle : enTitle);
+        }
+      });
+      
+      // Simulation Log Entries
+      const logTexts = document.querySelectorAll('.bts-log-entry .text, .bts-log .entry .text, .bts-log .text');
+      logTexts.forEach(el => {
+        const originalText = (el.getAttribute('data-original-text') || el.textContent || "").trim();
+        if (!el.hasAttribute('data-original-text')) {
+          el.setAttribute('data-original-text', originalText);
+        }
+        
+        if (lang === 'fa') {
+          if (originalText === "Process started") el.textContent = "شروع فرآیند";
+          else if (originalText === "Process finished") el.textContent = "پایان فرآیند";
+          else if (originalText === "Process entered") el.textContent = "ورود به فرآیند";
+          else if (originalText === "Start Event") el.textContent = "رویداد شروع";
+          else if (originalText === "End Event") el.textContent = "رویداد پایان";
+          else if (originalText === "Task") el.textContent = "وظیفه";
+          else if (originalText === "User Task") el.textContent = "وظیفه کاربر";
+          else if (originalText === "Service Task") el.textContent = "وظیفه سرویس";
+          else if (originalText === "Exclusive Gateway") el.textContent = "درگاه انحصاری (XOR)";
+          else if (originalText === "Parallel Gateway") el.textContent = "درگاه موازی (AND)";
+          else if (originalText === "Inclusive Gateway") el.textContent = "درگاه جامع (OR)";
+          else el.textContent = originalText;
+        } else {
+          el.textContent = originalText;
+        }
+      });
     });
     if (canvasContainerRef.current) {
-      observer.observe(document.body, { childList: true, subtree: true });
+      observer.observe(document.body, { childList: true, subtree: true, characterData: true });
     }
     return () => observer.disconnect();
   }, [lang]);
@@ -182,6 +273,7 @@ export default function BpmnModelerApp() {
       .then((data: Diagram) => {
         setCurrentDiagram(data);
         setDiagramName(data.name);
+          setDiagramNameEn(data.nameEn || data.name);
 
         // Check for local storage drafts first!
         const localDraft = localStorage.getItem(`bpmn-draft-${selectedId}`);
@@ -498,8 +590,10 @@ export default function BpmnModelerApp() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        name: newProcessName,
-        editorName: editorName
+        name: newProcessName || "بدون عنوان",
+        nameEn: newProcessNameEn || "Untitled Process",
+        editorName: editorName || "کاربر ناشناس",
+        editorNameEn: editorNameEn || "Unknown Editor",
       })
     })
       .then((res) => res.json())
@@ -531,7 +625,8 @@ export default function BpmnModelerApp() {
         body: JSON.stringify({
           xml,
           editorName,
-          name: diagramName
+          name: diagramName,
+          nameEn: diagramNameEn
         })
       });
 
@@ -581,6 +676,7 @@ export default function BpmnModelerApp() {
         } else {
           setCurrentDiagram(null);
           setDiagramName(t("newProcess", lang));
+          setDiagramNameEn("New Process");
           setSelectedId(null);
           if (modelerRef.current) {
              modelerRef.current.clear();
@@ -816,7 +912,7 @@ export default function BpmnModelerApp() {
             >
               {diagrams.map((d) => (
                 <option key={d.id} value={d.id}>
-                  {d.name} ({t("latestVersion", lang)} {d.latestVersion})
+                  {lang === 'fa' ? d.name : (d.nameEn || d.name)} ({t("latestVersion", lang)} {d.latestVersion})
                 </option>
               ))}
             </select>
@@ -838,8 +934,11 @@ export default function BpmnModelerApp() {
           {/* Current Process Name Input */}
           <input
             type="text"
-            value={diagramName}
-            onChange={(e) => setDiagramName(e.target.value)}
+            value={lang === 'fa' ? diagramName : diagramNameEn}
+            onChange={(e) => {
+              if (lang === 'fa') setDiagramName(e.target.value);
+              else setDiagramNameEn(e.target.value);
+            }}
             placeholder={t("processNamePlaceholder", lang)}
             className="px-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:border-blue-500 w-44 lg:w-56 font-semibold"
             id="diagram-name-input"
@@ -1034,7 +1133,7 @@ export default function BpmnModelerApp() {
                   <div className="text-xs text-slate-500 dark:text-slate-400 space-y-1">
                     <div className="flex items-center gap-1">
                       <User className="w-3 h-3 text-slate-400" />
-                      <span>{t("byEditor", lang, {editorName: v.editorName})}</span>
+                      <span>{t("byEditor", lang, {editorName: lang === 'fa' ? v.editorName : (v.editorNameEn || v.editorName)})}</span>
                     </div>
                     <div className="text-[10px] text-slate-400">
                       {new Date(v.timestamp).toLocaleString("fa-IR")}
@@ -1073,7 +1172,7 @@ export default function BpmnModelerApp() {
             </button>
           </div>
 
-          <div ref={canvasContainerRef} className={`w-full flex-1 bpmn-container ${!showGrid ? 'no-grid' : ''}`} id="bpmn-canvas-element" dir="ltr" />
+          <div ref={canvasContainerRef} className={`w-full flex-1 bpmn-container ${!showGrid ? "no-grid" : ""}`} id="bpmn-canvas-element" dir="ltr" />
 
           
           
@@ -1108,7 +1207,7 @@ export default function BpmnModelerApp() {
                         }
                       }}
                       className="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer border border-rose-200 dark:border-rose-900/50 bg-rose-50/50 dark:bg-rose-900/20 mb-1 rounded text-start transition"
-                      dir="ltr"
+                      dir={lang === "fa" ? "rtl" : "ltr"}
                     >
                       <span className="text-rose-500 flex-shrink-0 text-xs">⚠️</span>
                       <span className="text-sm text-slate-700 dark:text-slate-300 flex-1">{customTranslate(issue.message)}</span>
@@ -1344,15 +1443,26 @@ export default function BpmnModelerApp() {
 
             <form onSubmit={handleCreateProcess} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5">{t("businessProcessTitle", lang)}</label>
+                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5">{t("businessProcessTitle", lang)} (فارسی)</label>
                 <input
                   type="text"
                   required
                   value={newProcessName}
                   onChange={(e) => setNewProcessName(e.target.value)}
-                  placeholder={t("processNameExample", lang)}
+                  placeholder={lang === 'fa' ? t("processNameExample", lang) : "فارسی..."}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm"
                   id="modal-new-name-input"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5">{t("businessProcessTitle", lang)} (English)</label>
+                <input
+                  type="text"
+                  value={newProcessNameEn}
+                  onChange={(e) => setNewProcessNameEn(e.target.value)}
+                  placeholder="e.g. Procurement Process"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm text-left"
+                  dir="ltr"
                 />
               </div>
 

@@ -3,11 +3,13 @@ export interface DiagramVersion {
   xml: string;
   timestamp: string;
   editorName: string;
+  editorNameEn?: string;
 }
 
 export interface Diagram {
   id: string;
   name: string;
+  nameEn?: string;
   createdAt: string;
   updatedAt: string;
   latestVersion: number;
@@ -19,6 +21,7 @@ export interface Diagram {
 export interface DiagramListItem {
   id: string;
   name: string;
+  nameEn?: string;
   createdAt: string;
   updatedAt: string;
   latestVersion: number;
