@@ -863,7 +863,37 @@ export default function BpmnModelerApp() {
     if (!modelerRef.current) return;
     try {
       const { svg } = await modelerRef.current.saveSVG();
-      const blob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(svg, "image/svg+xml");
+      const svgEl = doc.documentElement;
+      
+      // Inject explicit Light Mode styles so exported SVG is always light mode
+      const style = doc.createElementNS("http://www.w3.org/2000/svg", "style");
+      style.textContent = `
+        svg { background-color: #ffffff; }
+        text, tspan { font-family: Tahoma, Arial, sans-serif !important; fill: #0f172a !important; color: #0f172a !important; }
+        .djs-element:not(.djs-connection) .djs-visual > rect,
+        .djs-element:not(.djs-connection) .djs-visual > circle,
+        .djs-element:not(.djs-connection) .djs-visual > polygon,
+        .djs-element:not(.djs-connection) .djs-visual > path {
+          stroke: #1e293b !important;
+        }
+        .djs-connection .djs-visual path,
+        .djs-connection .djs-visual polyline,
+        .djs-connection .djs-visual line {
+          stroke: #1e293b !important;
+        }
+        marker path, marker circle, marker polygon {
+          fill: #1e293b !important;
+          stroke: #1e293b !important;
+        }
+      `;
+      svgEl.insertBefore(style, svgEl.firstChild);
+
+      const serializer = new XMLSerializer();
+      const lightSvgStr = serializer.serializeToString(svgEl);
+
+      const blob = new Blob([lightSvgStr], { type: "image/svg+xml;charset=utf-8" });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
@@ -884,8 +914,26 @@ export default function BpmnModelerApp() {
         const doc = parser.parseFromString(svg, "image/svg+xml");
         const svgEl = doc.documentElement;
         
+        // Ensure Light Mode rendering style for exported canvas image
         const style = doc.createElementNS("http://www.w3.org/2000/svg", "style");
-        style.textContent = `text { font-family: Tahoma, Arial, sans-serif !important; }`;
+        style.textContent = `
+          text, tspan { font-family: Tahoma, Arial, sans-serif !important; fill: #0f172a !important; color: #0f172a !important; }
+          .djs-element:not(.djs-connection) .djs-visual > rect,
+          .djs-element:not(.djs-connection) .djs-visual > circle,
+          .djs-element:not(.djs-connection) .djs-visual > polygon,
+          .djs-element:not(.djs-connection) .djs-visual > path {
+            stroke: #1e293b !important;
+          }
+          .djs-connection .djs-visual path,
+          .djs-connection .djs-visual polyline,
+          .djs-connection .djs-visual line {
+            stroke: #1e293b !important;
+          }
+          marker path, marker circle, marker polygon {
+            fill: #1e293b !important;
+            stroke: #1e293b !important;
+          }
+        `;
         svgEl.insertBefore(style, svgEl.firstChild);
         
         const viewBox = svgEl.getAttribute("viewBox");
@@ -921,7 +969,8 @@ export default function BpmnModelerApp() {
           canvas.height = paddedHeight * scale;
           const ctx = canvas.getContext("2d");
           if (ctx) {
-            ctx.fillStyle = theme === "dark" ? "#0f172a" : "#ffffff";
+            // Always export on crisp light background (#ffffff) regardless of active dark mode theme
+            ctx.fillStyle = "#ffffff";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
           }

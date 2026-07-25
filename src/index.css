@@ -829,10 +829,57 @@ html.dark-theme .djs-popup-body {
   transition: x 0.2s ease-out, y 0.2s ease-out, width 0.2s ease-out, height 0.2s ease-out;
 }
 
-/* Canvas Dark Mode Inversion */
-.dark-theme .bjs-container > svg,
-.dark-theme .bpmn-container > svg {
-  filter: invert(0.88) hue-rotate(180deg);
+/* Canvas Dark Mode Canvas & Element Styles */
+.dark-theme .bjs-container,
+.dark-theme .bpmn-container {
+  background-color: #0f172a !important;
+}
+
+/* Default shapes in dark mode: Dark fill (#1e293b) and light border (#f8fafc) */
+.dark-theme .bjs-container .djs-element:not(.djs-connection) .djs-visual rect,
+.dark-theme .bjs-container .djs-element:not(.djs-connection) .djs-visual circle,
+.dark-theme .bjs-container .djs-element:not(.djs-connection) .djs-visual polygon {
+  fill: #1e293b !important;
+  stroke: #f8fafc !important;
+}
+
+/* Exception: Shape paths (e.g. Data Object, Text Annotation, Data Store) */
+.dark-theme .bjs-container .djs-element:not(.djs-connection) .djs-visual > path {
+  stroke: #f8fafc !important;
+}
+
+/* Gateway & Event inner detail icons/symbols (X mark, +, gear, user, timer, etc.) */
+.dark-theme .bjs-container .djs-element[data-element-id*="Gateway"] .djs-visual path,
+.dark-theme .bjs-container .djs-element[data-element-id*="Event"] .djs-visual path,
+.dark-theme .bjs-container .djs-element[data-element-id*="Activity"] .djs-visual path,
+.dark-theme .bjs-container .djs-element[data-element-id*="Task"] .djs-visual path,
+.dark-theme .bjs-container .djs-element[data-element-id*="SubProcess"] .djs-visual path,
+.dark-theme .bjs-container .djs-element:not(.djs-connection) .djs-visual path:not(:first-child) {
+  fill: #f8fafc !important;
+  stroke: #f8fafc !important;
+}
+
+/* Connectors, Sequence Flows, Message Flows, Associations */
+.dark-theme .bjs-container .djs-connection .djs-visual path,
+.dark-theme .bjs-container .djs-connection .djs-visual polyline,
+.dark-theme .bjs-container .djs-connection .djs-visual line {
+  stroke: #f8fafc !important;
+}
+
+/* Arrowheads & Markers on connectors */
+.dark-theme .bjs-container marker path,
+.dark-theme .bjs-container marker circle,
+.dark-theme .bjs-container marker polygon {
+  fill: #f8fafc !important;
+  stroke: #f8fafc !important;
+}
+
+/* Text & Labels in dark mode */
+.dark-theme .bjs-container .djs-element text,
+.dark-theme .bjs-container .djs-element tspan,
+.dark-theme .bjs-container text.djs-label {
+  fill: #f8fafc !important;
+  color: #f8fafc !important;
 }
 
 /* Force hide all badges, dots, and bullets in properties panel */
