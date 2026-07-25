@@ -29,8 +29,6 @@ export const translations = {
     'Manual task': 'وظیفه دستی',
     'Script task': 'وظیفه اسکریپتی',
     'Call activity': 'فعالیت فراخوانی',
-    'Sub-process (collapsed)': 'زیر فرآیند (بسته)',
-    'Sub-process (expanded)': 'زیر فرآیند (باز)',
 
     'Create EndEvent': 'ایجاد رویداد پایان',
     'Create Gateway': 'ایجاد درگاه تصمیمی (Gateway)',
@@ -89,6 +87,12 @@ export const translations = {
     'Config': 'پیکربندی',
     'Process ID': 'شناسه فرآیند',
     'Process Name': 'نام فرآیند',
+    'Participant Name': 'نام مشارکت‌کننده',
+    'Participant ID': 'شناسه مشارکت‌کننده',
+    'Participant name': 'نام مشارکت‌کننده',
+    'Participant id': 'شناسه مشارکت‌کننده',
+    'PARTICIPANT': 'مشارکت‌کننده (استخر)',
+    'Participant': 'مشارکت‌کننده',
     'Parameters': 'پارامترها',
     'Input parameters': 'پارامترهای ورودی',
     'Output parameters': 'پارامترهای خروجی',
@@ -125,9 +129,16 @@ export const translations = {
     'Log': 'لاگ',
     'Simulation Settings': 'تنظیمات شبیه‌سازی',
 
+    // Context Pad & Color
+    'Set color': 'تنظیم رنگ',
+    'Set Color': 'تنظیم رنگ',
+    'Append task': 'افزودن فعالیت',
+    'Append Task': 'افزودن فعالیت',
+    'Append gateway': 'افزودن درگاه',
+    'Append Gateway': 'افزودن درگاه',
+    'Append end event': 'افزودن رویداد پایان',
     'Append EndEvent': 'افزودن رویداد پایان',
-    'Append Gateway': 'افزودن درگاه تصمیمی',
-    'Append Task': 'افزودن وظیفه جدید',
+    'Append intermediate/boundary event': 'افزودن رویداد میانی/مرزی',
     'Append Intermediate/Boundary Event': 'افزودن رویداد میانی یا مرزی',
     
     // Color Picker & Misc
@@ -161,9 +172,8 @@ export const translations = {
     '1 Error': '1 خطا',
     'No Issues': 'مشکلی یافت نشد',
 
-    // Create / Append Palette
+    // Create / Append Palette & Popup Categories
     'Create element': 'ایجاد عنصر',
-
     'Append element': 'افزودن عنصر',
     'Change element': 'تغییر عنصر',
     'Search': 'جستجو',
@@ -176,12 +186,85 @@ export const translations = {
     'SEQUENCE FLOW': 'جریان متوالی',
     'EXCLUSIVE GATEWAY': 'درگاه انحصاری',
     'Gateways': 'درگاه‌ها (Gateways)',
-    'Tasks': 'وظایف (Tasks)',
+    'Tasks': 'فعالیت‌ها (Tasks)',
     'Events': 'رویدادها (Events)',
     'Data': 'داده‌ها',
     'Participants': 'مجریان',
     'Sub processes': 'زیرفرآیندها',
+    'Sub-processes': 'زیرفرآیندها',
     'Sub process': 'زیرفرآیند',
+    'Sub-process': 'زیرفرآیند',
+
+    // Detailed Popup / Morph items
+    'Transaction': 'تراکنش',
+    'Event sub-process': 'رویداد زیرفرآیند',
+    'Event Sub-Process': 'رویداد زیرفرآیند',
+    'Ad-hoc sub-process': 'زیرفرآیند موردی',
+    'Ad-hoc Sub-Process': 'زیرفرآیند موردی',
+    'Ad-hoc sub-process (collapsed)': 'زیرفرآیند موردی (بسته)',
+    'Ad-hoc sub-process (expanded)': 'زیرفرآیند موردی (باز)',
+    'Ad-hoc Sub-Process (collapsed)': 'زیرفرآیند موردی (بسته)',
+    'Ad-hoc Sub-Process (expanded)': 'زیرفرآیند موردی (باز)',
+    'Sub-process (collapsed)': 'زیرفرآیند (بسته)',
+    'Sub-process (expanded)': 'زیرفرآیند (باز)',
+    'Sub process (collapsed)': 'زیرفرآیند (بسته)',
+    'Sub process (expanded)': 'زیرفرآیند (باز)',
+
+    'Start event': 'رویداد شروع',
+    'Intermediate throw event': 'رویداد میانی پرتابی',
+    'Boundary event': 'رویداد مرزی',
+    'End event': 'رویداد پایان',
+
+    'Message start event': 'رویداد شروع پیام',
+    'Timer start event': 'رویداد شروع زمان‌سنج',
+    'Conditional start event': 'رویداد شروع شرطی',
+    'Signal start event': 'رویداد شروع سیگنال',
+
+    'Message intermediate catch event': 'رویداد میانی دریافت پیام',
+    'Message intermediate throw event': 'رویداد میانی پرتاب پیام',
+    'Timer intermediate catch event': 'رویداد میانی دریافت زمان‌سنج',
+    'Escalation intermediate throw event': 'رویداد میانی پرتاب ارتقا',
+    'Conditional intermediate catch event': 'رویداد میانی دریافت شرطی',
+    'Link intermediate catch event': 'رویداد میانی دریافت لینک',
+    'Link intermediate throw event': 'رویداد میانی پرتاب لینک',
+    'Compensation intermediate throw event': 'رویداد میانی پرتاب جبران',
+    'Signal intermediate catch event': 'رویداد میانی دریافت سیگنال',
+    'Signal intermediate throw event': 'رویداد میانی پرتاب سیگنال',
+
+    'Message end event': 'رویداد پایان پیام',
+    'Escalation end event': 'رویداد پایان ارتقا',
+    'Error end event': 'رویداد پایان خطا',
+    'Cancel end event': 'رویداد پایان انصراف',
+    'Compensation end event': 'رویداد پایان جبران',
+    'Signal end event': 'رویداد پایان سیگنال',
+    'Terminate end event': 'رویداد پایان خاتمه',
+
+    'Message boundary event': 'رویداد مرزی پیام',
+    'Escalation boundary event': 'رویداد مرزی ارتقا',
+    'Conditional boundary event': 'رویداد مرزی شرطی',
+    'Error boundary event': 'رویداد مرزی خطا',
+    'Cancel boundary event': 'رویداد مرزی انصراف',
+    'Signal boundary event': 'رویداد مرزی سیگنال',
+    'Compensation boundary event': 'رویداد مرزی جبران',
+
+    'Message boundary event (non-interrupting)': 'رویداد مرزی پیام (غیرقطع‌کننده)',
+    'Timer boundary event (non-interrupting)': 'رویداد مرزی زمان‌سنج (غیرقطع‌کننده)',
+    'Conditional boundary event (non-interrupting)': 'رویداد مرزی شرطی (غیرقطع‌کننده)',
+    'Signal boundary event (non-interrupting)': 'رویداد مرزی سیگنال (غیرقطع‌کننده)',
+    'Escalation boundary event (non-interrupting)': 'رویداد مرزی ارتقا (غیرقطع‌کننده)',
+
+    'Data store reference': 'مرجع ذخیره‌گاه داده',
+    'Data object reference': 'مرجع شیء داده',
+    'Data Store Reference': 'مرجع ذخیره‌گاه داده',
+    'Data Object Reference': 'مرجع شیء داده',
+
+    'Expanded pool/participant': 'استخر/مشارکت‌کننده باز شده',
+    'Empty pool/participant': 'استخر/مشارکت‌کننده خالی',
+    'Expanded Pool/Participant': 'استخر/مشارکت‌کننده باز شده',
+    'Empty Pool/Participant': 'استخر/مشارکت‌کننده خالی',
+    'Empty pool/participant (removes content)': 'استخر/مشارکت‌کننده خالی (حذف محتوا)',
+    'Empty Pool/Participant (removes content)': 'استخر/مشارکت‌کننده خالی (حذف محتوا)',
+    'Comments': 'نظرات',
 
     'Append text annotation': 'افزودن یادداشت متنی',
     'Change type': 'تغییر نوع عنصر',
@@ -298,8 +381,20 @@ export default function customTranslate(template: string, replacements?: Record<
   const currentLang = typeof window !== "undefined" ? (window as any).__BPMN_LANG__ : "fa";
   
   let translated = template;
-  if (currentLang === "fa" && translations.fa[template]) {
-    translated = translations.fa[template];
+  if (currentLang === "fa") {
+    const trimmed = template.trim();
+    const faMap = translations.fa as Record<string, string>;
+    if (faMap[template]) {
+      translated = faMap[template];
+    } else if (faMap[trimmed]) {
+      translated = faMap[trimmed];
+    } else {
+      const lower = trimmed.toLowerCase();
+      const matchedKey = Object.keys(faMap).find(k => k.toLowerCase() === lower);
+      if (matchedKey) {
+        translated = faMap[matchedKey];
+      }
+    }
   }
 
   // Replace {key} placeholders

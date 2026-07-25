@@ -206,11 +206,11 @@ export default function BpmnModelerApp() {
           }
         });
         
-        // Context Pad titles
-        const padEntries = document.querySelectorAll('.djs-context-pad .entry');
+        // Context Pad titles & Tooltips
+        const padEntries = document.querySelectorAll('.djs-context-pad .entry, .djs-context-pad [title]');
         padEntries.forEach(entry => {
           const action = entry.getAttribute('data-action');
-          if (!action) return;
+          const currentTitle = entry.getAttribute('title') || "";
           
           let faTitle = "";
           let enTitle = "";
@@ -218,16 +218,80 @@ export default function BpmnModelerApp() {
           if (action === 'append.text-annotation') { faTitle = 'افزودن یادداشت متنی'; enTitle = 'Append text annotation'; }
           else if (action === 'append.end-event') { faTitle = 'افزودن رویداد پایان'; enTitle = 'Append EndEvent'; }
           else if (action === 'append.gateway') { faTitle = 'افزودن درگاه'; enTitle = 'Append Gateway'; }
-          else if (action === 'append.task') { faTitle = 'افزودن وظیفه'; enTitle = 'Append Task'; }
+          else if (action === 'append.task' || action === 'append-task') { faTitle = 'افزودن فعالیت'; enTitle = 'Append task'; }
           else if (action === 'append.intermediate-event') { faTitle = 'افزودن رویداد میانی یا مرزی'; enTitle = 'Append Intermediate/Boundary Event'; }
           else if (action === 'delete') { faTitle = 'حذف عنصر'; enTitle = 'Remove'; }
           else if (action === 'replace') { faTitle = 'تغییر نوع عنصر'; enTitle = 'Change type'; }
           else if (action === 'connect') { faTitle = 'اتصال با جریان متوالی یا پیام'; enTitle = 'Connect using Sequence/MessageFlow or Association'; }
+          else if (action === 'set-color') { faTitle = 'تنظیم رنگ'; enTitle = 'Set color'; }
+          else if (action === 'comments' || currentTitle === 'Comments') { faTitle = 'نظرات'; enTitle = 'Comments'; }
+          else if (currentTitle === 'Set color' || currentTitle === 'Set Color') { faTitle = 'تنظیم رنگ'; enTitle = 'Set color'; }
+          else if (currentTitle === 'Append task' || currentTitle === 'Append Task') { faTitle = 'افزودن فعالیت'; enTitle = 'Append task'; }
           
           if (faTitle && enTitle) {
             const targetTitle = lang === 'fa' ? faTitle : enTitle;
             if (entry.getAttribute('title') !== targetTitle) {
               entry.setAttribute('title', targetTitle);
+            }
+          }
+        });
+
+        // Popup menu entries, headers, descriptions translation
+        const popupEls = document.querySelectorAll('.djs-popup .entry-header, .djs-popup .entry-title, .djs-popup .label, .djs-popup .group-title, .djs-popup-header-title, .djs-popup-title, .djs-popup .entry, .djs-popup .description');
+        popupEls.forEach(el => {
+          const orig = el.getAttribute('data-original-text') || el.textContent || "";
+          if (!el.hasAttribute('data-original-text') && orig.trim()) {
+            el.setAttribute('data-original-text', orig.trim());
+          }
+          const rawText = (el.getAttribute('data-original-text') || orig).trim();
+          if (!rawText) return;
+
+          if (lang === 'fa') {
+            const translated = customTranslate(rawText);
+            if (translated && translated !== rawText) {
+              if (el.hasAttribute('title') && el.getAttribute('title') !== translated) {
+                el.setAttribute('title', translated);
+              }
+              const firstSpan = el.querySelector('.entry-title, .entry-header, .label');
+              if (firstSpan && firstSpan.textContent !== translated) {
+                firstSpan.textContent = translated;
+              } else if (!firstSpan && el.children.length === 0 && el.textContent !== translated) {
+                el.textContent = translated;
+              }
+            }
+          } else {
+            if (el.hasAttribute('title') && el.getAttribute('title') !== rawText) {
+              el.setAttribute('title', rawText);
+            }
+            const firstSpan = el.querySelector('.entry-title, .entry-header, .label');
+            if (firstSpan && firstSpan.textContent !== rawText) {
+              firstSpan.textContent = rawText;
+            } else if (!firstSpan && el.children.length === 0 && el.textContent !== rawText) {
+              el.textContent = rawText;
+            }
+          }
+        });
+
+        // Properties Panel labels, titles, headers translation
+        const propEls = document.querySelectorAll('.bio-properties-panel .bio-properties-panel-group-header-title, .bio-properties-panel .bio-properties-panel-label, .bio-properties-panel .bio-properties-panel-header-title, .bio-properties-panel .bio-properties-panel-header-type, .bio-properties-panel-checkbox-label, .bio-properties-panel .bio-properties-panel-description');
+        propEls.forEach(el => {
+          const orig = el.getAttribute('data-original-text') || el.textContent || "";
+          if (!el.hasAttribute('data-original-text') && orig.trim()) {
+            el.setAttribute('data-original-text', orig.trim());
+          }
+          const rawText = (el.getAttribute('data-original-text') || orig).trim();
+          if (!rawText) return;
+
+          if (lang === 'fa') {
+            const translated = customTranslate(rawText);
+            if (translated && translated !== rawText) {
+              if (el.textContent !== translated) {
+                el.textContent = translated;
+              }
+            }
+          } else {
+            if (el.textContent !== rawText) {
+              el.textContent = rawText;
             }
           }
         });
