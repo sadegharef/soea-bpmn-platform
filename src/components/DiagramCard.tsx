@@ -8,6 +8,7 @@
 import React, { useState } from 'react';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { Diagram, DiagramStatus } from '../types';
+import { TagBadge } from '../utils/tagUtils';
 import { 
   Workflow, 
   CheckCircle2, 
@@ -132,12 +133,9 @@ export const DiagramCard: React.FC<DiagramCardProps> = ({ diagram, viewMode, onM
 
               {/* Tags */}
               {diagram.tags && diagram.tags.length > 0 && (
-                <div className="flex items-center gap-1">
-                  <Tag className="w-3 h-3 text-slate-400" />
+                <div className="flex items-center gap-1 flex-wrap">
                   {diagram.tags.map((tag, idx) => (
-                    <span key={idx} className="bg-slate-100 dark:bg-slate-700/60 text-slate-600 dark:text-slate-300 px-1.5 py-0.2 rounded text-[10px]">
-                      #{tag}
-                    </span>
+                    <TagBadge key={idx} tag={tag} size="sm" />
                   ))}
                 </div>
               )}
@@ -262,9 +260,7 @@ export const DiagramCard: React.FC<DiagramCardProps> = ({ diagram, viewMode, onM
         {diagram.tags && diagram.tags.length > 0 && (
           <div className="flex items-center gap-1.5 flex-wrap pt-1">
             {diagram.tags.map((tag, idx) => (
-              <span key={idx} className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[11px] px-2 py-0.5 rounded-lg border border-slate-200 dark:border-slate-700">
-                #{tag}
-              </span>
+              <TagBadge key={idx} tag={tag} size="sm" />
             ))}
           </div>
         )}

@@ -3,7 +3,22 @@
  * @description داده‌های اولیه و نمونه برای کاربران، تیم‌ها، پوشه‌ها و فرآیندهای BPMN 2.0 در فضای کاری
  */
 
-import { User, Team, Folder, Diagram } from '../types';
+import { User, Team, Folder, Diagram, TagItem } from '../types';
+
+/**
+ * بانک تگ‌های پیش‌فرض اولیه
+ */
+export const INITIAL_TAG_BANK: TagItem[] = [
+  { id: 'tag_1', name: 'اولویت بالا', color: '#ef4444' },
+  { id: 'tag_2', name: 'اولویت متوسط', color: '#f59e0b' },
+  { id: 'tag_3', name: 'اولویت پایین', color: '#10b981' },
+  { id: 'tag_4', name: 'مالی', color: '#3b82f6' },
+  { id: 'tag_5', name: 'منابع انسانی', color: '#a855f7' },
+  { id: 'tag_6', name: 'خزانه', color: '#0284c7' },
+  { id: 'tag_7', name: 'جذب', color: '#ec4899' },
+  { id: 'tag_8', name: 'As-Is', color: '#64748b' },
+  { id: 'tag_9', name: 'To-Be', color: '#06b6d4' },
+];
 
 /**
  * کاربران نمونه اولیه سامانه
@@ -27,7 +42,7 @@ export const INITIAL_USERS: User[] = [
     password: '123',
     email: 'm.ahmadi@enterprise.com',
     avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
-    jobTitle: 'سرممیز و بازبینی‌کننده کیفیت',
+    jobTitle: 'بازبین ارشد کیفیت',
   },
   {
     id: 'u3',
@@ -71,7 +86,7 @@ export const INITIAL_TEAMS: Team[] = [
   },
   {
     id: 't2',
-    name: 'واحد تضمین کیفیت و ممیزی داخلی',
+    name: 'واحد تضمین کیفیت و بازبینی داخلی',
     nameEn: 'Quality Assurance Unit',
     description: 'نظارت بر تطابق فرآیندها با استانداردهای ایزو و حکمرانی داده',
     ownerId: 'u2',
@@ -180,7 +195,7 @@ export const INITIAL_DIAGRAMS: Diagram[] = [
     teamId: 't1',
     folderId: 'f3',
     status: 'in_review',
-    tags: ['#مالی', '#خزانه', '#As-Is', '#پروژه ۱: بهینه‌سازی سیستم‌های مالی'],
+    tags: ['اولویت بالا', 'مالی', 'خزانه', 'As-Is'],
     reviewerId: 'u2',
     reviewerName: 'مریم احمدی',
     contributorIds: ['u1', 'u3'],
@@ -230,7 +245,7 @@ export const INITIAL_DIAGRAMS: Diagram[] = [
     teamId: 't1',
     folderId: 'f2',
     status: 'approved',
-    tags: ['#منابع_انسانی', '#جذب', '#To-Be'],
+    tags: ['منابع انسانی', 'جذب', 'اولویت متوسط', 'To-Be'],
     reviewerId: 'u2',
     reviewerName: 'مریم احمدی',
     contributorIds: ['u1'],

@@ -141,3 +141,12 @@ export interface DiagramListItem {
   updatedAt: string;
   latestVersion: number;
 }
+
+/**
+ * آیتم تگ در بانک تگ‌های سیستم همراه با رنگ اختصاصی
+ */
+export interface TagItem {
+  id: string;
+  name: string;
+  color: string; // کد رنگ مثلا #ef4444
+}

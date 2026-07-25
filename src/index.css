@@ -24,13 +24,34 @@ body {
   color: #0f172a;
 }
 
-/* RTL Support for SVG elements in the canvas */
+/* RTL & Center alignment for SVG text in BPMN canvas */
 svg text, 
 .djs-visual text, 
 .djs-label text, 
 .djs-group text,
 .djs-element text {
   font-family: "Vazirmatn", sans-serif !important;
+  text-anchor: middle !important;
+}
+
+svg tspan,
+.djs-visual tspan,
+.djs-label tspan {
+  text-anchor: middle !important;
+}
+
+/* Ensure Task titles are centered inside tasks */
+.djs-element[data-element-id*="Task"] .djs-visual text,
+.djs-element[data-element-id*="Activity"] .djs-visual text,
+.djs-element[data-element-id*="SubProcess"] .djs-visual text {
+  text-anchor: middle !important;
+  dominant-baseline: central !important;
+}
+
+/* Ensure Event labels are bottom-centered */
+.djs-element[data-element-id*="Event"] + .djs-label text,
+.djs-element[data-element-id*="Gateway"] + .djs-label text {
+  text-anchor: middle !important;
 }
 
 /* Layout for full screen */
@@ -98,39 +119,122 @@ html[dir="ltr"] .bjs-container .djs-palette {
   box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1) !important;
 }
 
-/* Adjust Properties Panel style */
+/* Adjust Properties Panel style with modern Tailwind-inspired design */
 .properties-panel-parent {
   border-left: 1px solid #e2e8f0;
   background-color: #f8fafc;
 }
 
 .bio-properties-panel {
-  font-family: "Vazirmatn", sans-serif !important;
+  font-family: "Vazirmatn", "Inter", sans-serif !important;
   direction: rtl !important;
+  font-size: 12px !important;
+  color: #0f172a !important;
+  background-color: transparent !important;
+  padding: 8px !important;
+}
+
+.bio-properties-panel-header {
+  padding: 10px 14px !important;
+  background-color: #ffffff !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  border-radius: 8px !important;
+  margin-bottom: 8px !important;
+}
+
+.bio-properties-panel-header-title {
+  font-weight: 700 !important;
+  font-size: 13px !important;
+  color: #0f172a !important;
+}
+
+.bio-properties-panel-group {
+  margin-bottom: 8px !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 10px !important;
+  background-color: #ffffff !important;
+  overflow: hidden !important;
 }
 
 .bio-properties-panel-group-header {
   direction: rtl !important;
   text-align: right !important;
+  padding: 8px 12px !important;
+  background-color: #f8fafc !important;
+  color: #334155 !important;
+  font-weight: 700 !important;
+  font-size: 12px !important;
+  cursor: pointer !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+}
+
+.bio-properties-panel-group-header:hover {
+  background-color: #f1f5f9 !important;
+}
+
+.bio-properties-panel-group-header-title {
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  color: #1e293b !important;
 }
 
 .bio-properties-panel-entry {
   text-align: right !important;
+  padding: 8px 12px !important;
 }
 
 .bio-properties-panel-label {
   text-align: right !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: #475569 !important;
+  margin-bottom: 4px !important;
+  display: block !important;
 }
 
-.bio-properties-panel-input {
-  text-align: right !important;
-  direction: ltr !important; /* ids and technical specs are ltr */
+.bio-properties-panel-description {
+  font-size: 10px !important;
+  color: #64748b !important;
+  margin-top: 2px !important;
+  line-height: 1.3 !important;
+}
+
+.bio-properties-panel-input,
+.bio-properties-panel input[type="text"],
+.bio-properties-panel input[type="number"],
+.bio-properties-panel select,
+.bio-properties-panel textarea {
+  width: 100% !important;
+  padding: 6px 10px !important;
+  font-family: "Vazirmatn", "Inter", sans-serif !important;
+  font-size: 12px !important;
+  border-radius: 6px !important;
+  border: 1px solid #cbd5e1 !important;
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+  outline: none !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+.bio-properties-panel-input:focus,
+.bio-properties-panel input:focus,
+.bio-properties-panel select:focus,
+.bio-properties-panel textarea:focus {
+  border-color: #3b82f6 !important;
+  background-color: #ffffff !important;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15) !important;
 }
 
 .bio-properties-panel-input[type="text"], 
 .bio-properties-panel-input[type="textarea"] {
-  direction: rtl !important; /* names/docs are rtl */
+  direction: rtl !important;
   text-align: right !important;
+}
+
+.bio-properties-panel-input[name="id"] {
+  direction: ltr !important;
+  text-align: left !important;
+  font-family: var(--font-mono) !important;
 }
 
 /* Dark Mode Stylesheet overrides */
@@ -177,7 +281,7 @@ html[dir="ltr"] .bjs-container .djs-palette {
 .dark-theme .bio-properties-panel-group,
 .dark-theme .bio-properties-panel-group-entries,
 .dark-theme .bio-properties-panel-entry {
-  background-color: #1e293b !important;
+  background-color: #0f172a !important;
   color: #f8fafc !important;
 }
 
@@ -186,10 +290,14 @@ html[dir="ltr"] .bjs-container .djs-palette {
   border-bottom-color: #334155 !important;
 }
 
+.dark-theme .bio-properties-panel-group {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+}
+
 .dark-theme .bio-properties-panel-group-header {
   background-color: #1e293b !important;
   color: #f8fafc !important;
-  border-top: 1px solid #334155 !important;
   border-bottom: 1px solid #334155 !important;
 }
 
@@ -209,14 +317,22 @@ html[dir="ltr"] .bjs-container .djs-palette {
   color: #94a3b8 !important;
 }
 
-.dark-theme .bio-properties-panel-input {
+.dark-theme .bio-properties-panel-input,
+.dark-theme .bio-properties-panel input[type="text"],
+.dark-theme .bio-properties-panel input[type="number"],
+.dark-theme .bio-properties-panel select,
+.dark-theme .bio-properties-panel textarea {
   background-color: #0f172a !important;
   color: #f8fafc !important;
   border: 1px solid #334155 !important;
 }
 
-.dark-theme .bio-properties-panel-input:focus {
+.dark-theme .bio-properties-panel-input:focus,
+.dark-theme .bio-properties-panel input:focus,
+.dark-theme .bio-properties-panel select:focus,
+.dark-theme .bio-properties-panel textarea:focus {
   border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25) !important;
 }
 
 /* Dark mode SVG elements */
@@ -993,6 +1109,10 @@ html.dark-theme .djs-popup-body {
   background: transparent !important;
 }
 
+/* ==========================================================
+   TOKEN SIMULATION STYLING & UI/UX HARMONIZATION (INDIGO THEME)
+   ========================================================== */
+
 /* Token Simulation placed on OPPOSITE side of element selection palette (.djs-palette) */
 html[dir="rtl"] .bts-toggle-mode,
 html[dir="rtl"] .bts-palette, 
@@ -1008,26 +1128,28 @@ html[dir="ltr"] .bts-token-simulation-bar {
   right: 20px !important;
 }
 
+/* Simulation Toggle Button */
 .bts-toggle-mode {
   position: absolute !important;
   top: 20px !important;
   bottom: auto !important;
   z-index: 100 !important;
-  width: 44px !important;
-  height: 44px !important;
-  border-radius: 8px !important;
-  background-color: white !important;
+  width: 42px !important;
+  height: 42px !important;
+  border-radius: 12px !important;
+  background-color: #ffffff !important;
   border: 1px solid #e2e8f0 !important;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
   font-size: 0 !important;
   color: transparent !important;
   padding: 0 !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="%233b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>') !important;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="%236366f1" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>') !important;
   background-repeat: no-repeat !important;
   background-position: center !important;
+  transition: all 0.2s ease-in-out !important;
 }
 
 .bts-toggle-mode::before, .bts-toggle-mode .bts-toggle {
@@ -1037,23 +1159,167 @@ html[dir="ltr"] .bts-token-simulation-bar {
 .dark-theme .bts-toggle-mode {
   background-color: #1e293b !important;
   border-color: #334155 !important;
-  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="%2394a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>') !important;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="%23818cf8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>') !important;
 }
 
-.bjs-container.simulation .bts-toggle-mode, .bts-toggle-mode:hover {
-  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="%23ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>') !important;
-  background-color: #10D070 !important;
+.bjs-container.simulation .bts-toggle-mode, 
+.bts-toggle-mode:hover {
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="%23ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>') !important;
+  background-color: #4f46e5 !important;
+  border-color: #6366f1 !important;
+  box-shadow: 0 4px 16px rgba(79, 70, 229, 0.4) !important;
 }
 
-.bts-palette, .bts-token-simulation-bar {
+/* Simulation Control Bar */
+.bts-token-simulation-bar {
   position: absolute !important;
-  top: 74px !important;
+  top: 72px !important;
   z-index: 99 !important;
+  background-color: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 14px !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1) !important;
+  padding: 4px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
 }
 
-/* Hide Simulation Log Badges */
-.bts-log .scope {
+.dark-theme .bts-token-simulation-bar {
+  background-color: #0f172a !important;
+  border-color: #334155 !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5) !important;
+}
+
+.bts-token-simulation-bar button,
+.bts-token-simulation-bar .bts-entry {
+  border-radius: 8px !important;
+  border: none !important;
+  background: transparent !important;
+  color: #64748b !important;
+  transition: all 0.15s ease-in-out !important;
+}
+
+.dark-theme .bts-token-simulation-bar button,
+.dark-theme .bts-token-simulation-bar .bts-entry {
+  color: #94a3b8 !important;
+}
+
+.bts-token-simulation-bar button:hover,
+.bts-token-simulation-bar button.active,
+.bts-token-simulation-bar .bts-entry:hover {
+  background-color: #4f46e5 !important;
+  color: #ffffff !important;
+}
+
+/* Tokens and Token Count Badges */
+.bts-token circle,
+.bts-token {
+  fill: #6366f1 !important;
+  stroke: #ffffff !important;
+  stroke-width: 2px !important;
+  filter: drop-shadow(0px 2px 6px rgba(99, 102, 241, 0.5));
+}
+
+.bts-token-count {
+  background-color: #4f46e5 !important;
+  color: #ffffff !important;
+  font-family: "Vazirmatn", sans-serif !important;
+  font-weight: 700 !important;
+  font-size: 11px !important;
+  border-radius: 9999px !important;
+  border: 2px solid #ffffff !important;
+  box-shadow: 0 3px 10px rgba(79, 70, 229, 0.4) !important;
+  padding: 2px 6px !important;
+}
+
+/* Context Pad Overlay during simulation */
+.bts-context-pad {
+  background-color: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 10px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
+  overflow: hidden !important;
+}
+
+.dark-theme .bts-context-pad {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+.bts-context-pad:not(.disabled):hover {
+  background-color: #4f46e5 !important;
+  color: #ffffff !important;
+}
+
+/* Simulation Log Window */
+.bts-log {
+  background-color: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 16px !important;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.12) !important;
+  font-family: "Vazirmatn", sans-serif !important;
+  overflow: hidden !important;
+}
+
+.dark-theme .bts-log {
+  background-color: #0f172a !important;
+  border-color: #334155 !important;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5) !important;
+}
+
+.bts-log .bts-header {
+  background-color: #f8fafc !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  font-weight: 700 !important;
+  color: #334155 !important;
+  padding: 10px 14px !important;
+  font-size: 12px !important;
+}
+
+.dark-theme .bts-log .bts-header {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+  color: #e2e8f0 !important;
+}
+
+.bts-log .bts-content {
+  font-size: 11px !important;
+}
+
+.bts-log .bts-entry {
+  border-bottom: 1px solid #f1f5f9 !important;
+  padding: 6px 10px !important;
+}
+
+.dark-theme .bts-log .bts-entry {
+  border-color: #1e293b !important;
+}
+
+.bts-log .bts-entry:hover {
+  background-color: #e0e7ff !important;
+}
+
+.dark-theme .bts-log .bts-entry:hover {
+  background-color: #1e1b4b !important;
+}
+
+/* Hide Simulation Log Badges & IDs */
+.bts-log .scope,
+.bts-log .id,
+.bts-log .badge,
+.bts-log .identifier,
+.bts-log-entry .scope,
+.bts-log-entry .id {
   display: none !important;
+}
+
+/* Notifications during simulation */
+.bts-notifications .bts-notification {
+  border-radius: 12px !important;
+  font-family: "Vazirmatn", sans-serif !important;
+  font-size: 12px !important;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15) !important;
 }
 
 /* Hide default bottom lint button and canvas popups since issues are displayed in the bottom panel */
@@ -1069,13 +1335,3 @@ html[dir="ltr"] .bts-token-simulation-bar {
 
 html[dir="rtl"] { --font-sans: var(--font-sans-rtl); }
 html[dir="ltr"] { --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif; }
-
-/* Hide token simulation id badges */
-.bts-log .scope,
-.bts-log .id,
-.bts-log .badge,
-.bts-log .identifier,
-.bts-log-entry .scope,
-.bts-log-entry .id {
-  display: none !important;
-}

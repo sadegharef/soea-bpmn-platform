@@ -1,6 +1,6 @@
 /**
  * @file BpmnModelerApp.tsx
- * @description کامپوننت بوم اصلی مدلسازی BPMN 2.0، ابزارهای طراحی، شبیه‌سازی توکن، ممیزی هوشمند، خروجی‌های چندگانه و همکاری گروهی
+ * @description کامپوننت بوم اصلی مدلسازی BPMN 2.0، ابزارهای طراحی، شبیه‌سازی توکن، بازبینی هوشمند، خروجی‌های چندگانه و همکاری گروهی
  * @architecture
  * - Single Responsibility Principle (SRP): مدیریت چرخه حیات بوم bpmn-js، تعامل با ابزارها و خروجی‌های استاندارد
  * - Dependency Inversion Principle (DIP): اتکا به WorkspaceContext جهت همگام‌سازی نسخه‌ها، نظرات و وضعیت‌های فرآیند
@@ -576,6 +576,17 @@ export default function BpmnModelerApp({ theme: propsTheme, setTheme: propsSetTh
       setSelectedElementId(e.element.id);
     });
 
+    const handleSelectionChanged = (e: any) => {
+      const newSelection = e.newSelection || [];
+      if (newSelection.length > 0) {
+        setSelectedElementId(newSelection[0].id);
+      } else {
+        setSelectedElementId(null);
+      }
+    };
+
+    (modeler.get('eventBus') as any).on('selection.changed', handleSelectionChanged);
+
     let lintObserver: MutationObserver | null = null;
 
     const safeObserveLint = () => {
@@ -625,6 +636,7 @@ export default function BpmnModelerApp({ theme: propsTheme, setTheme: propsSetTh
       modeler.off("commandStack.changed", onCommandStackChanged);
       modeler.off("element.changed", onElementChanged);
       eventBus.off('linting.completed', handleLintingCompleted);
+      eventBus.off('selection.changed', handleSelectionChanged);
       if (lintObserver) lintObserver.disconnect();
       modeler.destroy();
       modelerRef.current = null;
@@ -652,7 +664,12 @@ export default function BpmnModelerApp({ theme: propsTheme, setTheme: propsSetTh
 
   // Render Comments when selected element changes or a new comment is added
   useEffect(() => {
-    if (!modelerRef.current || !selectedElementId || activeRightTab !== 'comments') return;
+    if (!modelerRef.current || activeRightTab !== 'comments') return;
+    
+    if (!selectedElementId) {
+      setComments([]);
+      return;
+    }
     
     const loadComments = () => {
       const elementRegistry = modelerRef.current?.get('elementRegistry');
@@ -1325,11 +1342,21 @@ export default function BpmnModelerApp({ theme: propsTheme, setTheme: propsSetTh
           {/* Toggle Tab */}
           <button
             onClick={() => setIsPropertiesOpen(!isPropertiesOpen)}
-            className="absolute top-1/2 -left-3.5 transform -translate-y-1/2 w-7 h-10 bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-300 hover:text-slate-800 rounded-l-md shadow-md z-10 flex items-center justify-center cursor-pointer transition"
+            className={`absolute top-1/2 transform -translate-y-1/2 z-30 flex items-center justify-center cursor-pointer transition-all duration-200 rounded-l-xl border shadow-xl ${
+              isPropertiesOpen
+                ? "-left-8 w-8 h-12 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 hover:text-indigo-600 dark:hover:text-indigo-400 hover:border-indigo-300"
+                : "-left-10 w-10 h-16 bg-indigo-600 hover:bg-indigo-700 text-white border-indigo-500 shadow-indigo-500/30 ring-2 ring-indigo-400/40"
+            }`}
             title={isPropertiesOpen ? t("closePanel", lang) : t("openPanel", lang)}
             id="properties-toggle-btn"
           >
-            {isPropertiesOpen ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+            {isPropertiesOpen ? (
+              <ChevronRight className="w-5 h-5" />
+            ) : (
+              <div className="flex items-center justify-center">
+                <ChevronLeft className="w-5 h-5 text-white animate-pulse" />
+              </div>
+            )}
           </button>
 
           <div className="flex-1 h-full overflow-hidden flex flex-col bg-white dark:bg-[#1e293b]">
@@ -1446,19 +1473,6 @@ export default function BpmnModelerApp({ theme: propsTheme, setTheme: propsSetTh
         </div>
 
       </div>
-      {/* 3.5 Bottom Status Footer */}
-      <footer className="h-8 bg-slate-50 dark:bg-[#1e293b] border-t border-slate-200 dark:border-slate-800 px-4 flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 shrink-0 select-none">
-        <div className="flex items-center gap-4">
-          <span>{t("statusReady", lang)}</span>
-          <span className="hidden sm:inline border-r border-slate-300 dark:border-slate-700 pe-4">
-            {t("copyrightText", lang)}
-          </span>
-        </div>
-        <div className="flex gap-4 font-sans font-medium text-xs">
-          <span>{t("versionNumber", lang)}</span>
-        </div>
-      </footer>
-
       {/* 4. Modals */}
       
       {diffingXmls && (

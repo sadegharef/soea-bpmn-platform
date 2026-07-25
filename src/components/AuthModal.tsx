@@ -5,7 +5,7 @@
 
 import React, { useState } from 'react';
 import { useWorkspace } from '../context/WorkspaceContext';
-import { LogIn, UserPlus, LogOut, Shield, KeyRound, User, Mail, Briefcase, AlertCircle, CheckCircle2, UserCheck, RefreshCw } from 'lucide-react';
+import { LogIn, UserPlus, LogOut, Shield, KeyRound, User, Mail, Briefcase, AlertCircle, CheckCircle2, UserCheck, RefreshCw, Camera, Upload, Check } from 'lucide-react';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -13,8 +13,11 @@ interface AuthModalProps {
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
-  const { currentUser, loginUser, logoutUser, registerUser, currentRole } = useWorkspace();
+  const { currentUser, loginUser, logoutUser, registerUser, updateUserProfile, currentRole } = useWorkspace();
   const [activeTab, setActiveTab] = useState<'profile' | 'login' | 'register'>(currentUser ? 'profile' : 'login');
+  const [profileMessage, setProfileMessage] = useState('');
+  const [customAvatarUrl, setCustomAvatarUrl] = useState('');
+  const [showAvatarUrlInput, setShowAvatarUrlInput] = useState(false);
   
   // Login State
   const [usernameOrEmail, setUsernameOrEmail] = useState('');
@@ -152,26 +155,122 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
           {activeTab === 'profile' && currentUser ? (
             <div className="space-y-5">
               
-              {/* User Identity Card */}
-              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 flex items-center gap-4">
-                <img
-                  src={currentUser.avatar}
-                  alt={currentUser.name}
-                  className="w-16 h-16 rounded-2xl object-cover border-2 border-indigo-500 shadow-md"
-                />
-                <div className="space-y-1">
+              {profileMessage && (
+                <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-xl text-emerald-700 dark:text-emerald-300 text-xs flex items-center gap-2 animate-fade-in">
+                  <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-500" />
+                  <span>{profileMessage}</span>
+                </div>
+              )}
+
+              {/* User Identity Card with Profile Picture Upload */}
+              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 flex flex-col sm:flex-row items-center gap-4">
+                
+                {/* Avatar with Camera Overlay */}
+                <div className="relative group shrink-0">
+                  <img
+                    src={currentUser.avatar}
+                    alt={currentUser.name}
+                    className="w-20 h-20 rounded-2xl object-cover border-2 border-indigo-500 shadow-md transition-transform group-hover:scale-105"
+                  />
+                  <label
+                    htmlFor="avatar-file-input"
+                    className="absolute inset-0 bg-slate-900/70 rounded-2xl flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition cursor-pointer text-white p-1 text-center"
+                    title="برای تغییر عکس پروفایل کلیک کنید"
+                  >
+                    <Camera className="w-5 h-5 mb-0.5 text-indigo-300" />
+                    <span className="text-[10px] font-bold">تغییر عکس</span>
+                  </label>
+                  <input
+                    id="avatar-file-input"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        if (file.size > 5 * 1024 * 1024) {
+                          alert("حجم تصویر نباید بیشتر از ۵ مگابایت باشد.");
+                          return;
+                        }
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                          if (typeof reader.result === 'string') {
+                            updateUserProfile({ avatar: reader.result });
+                            setProfileMessage('تصویر پروفایل شما با موفقیت آپلود و بروزرسانی شد.');
+                            setTimeout(() => setProfileMessage(''), 3000);
+                          }
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                  />
+                </div>
+
+                <div className="space-y-1.5 text-center sm:text-right flex-1">
                   <h4 className="font-extrabold text-base text-slate-900 dark:text-white">
                     {currentUser.name}
                   </h4>
                   {currentUser.nameEn && (
-                    <p className="text-xs text-slate-400 font-mono dir-ltr text-right">{currentUser.nameEn}</p>
+                    <p className="text-xs text-slate-400 font-mono dir-ltr text-center sm:text-right">{currentUser.nameEn}</p>
                   )}
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-xs font-bold border border-indigo-500/20">
-                    <UserCheck className="w-3.5 h-3.5" />
-                    {getRoleLabel(currentRole)}
-                  </span>
+                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 pt-0.5">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-xs font-bold border border-indigo-500/20">
+                      <UserCheck className="w-3.5 h-3.5" />
+                      {getRoleLabel(currentRole)}
+                    </span>
+
+                    <label
+                      htmlFor="avatar-file-input"
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-semibold cursor-pointer transition shadow-sm"
+                    >
+                      <Upload className="w-3 h-3" />
+                      <span>آپلود عکس</span>
+                    </label>
+
+                    <button
+                      type="button"
+                      onClick={() => setShowAvatarUrlInput(!showAvatarUrlInput)}
+                      className="text-[11px] text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 underline cursor-pointer"
+                    >
+                      آدرس تصویر (URL)
+                    </button>
+                  </div>
                 </div>
               </div>
+
+              {/* URL Avatar Input Form */}
+              {showAvatarUrlInput && (
+                <div className="p-3 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2 animate-fade-in">
+                  <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 block">
+                    لینک یا آدرس مستقیم تصویر پروفایل:
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="url"
+                      placeholder="https://example.com/avatar.jpg"
+                      value={customAvatarUrl}
+                      onChange={(e) => setCustomAvatarUrl(e.target.value)}
+                      className="flex-1 px-3 py-1.5 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-mono"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (customAvatarUrl.trim()) {
+                          updateUserProfile({ avatar: customAvatarUrl.trim() });
+                          setProfileMessage('تصویر پروفایل با موفقیت بروزرسانی شد.');
+                          setCustomAvatarUrl('');
+                          setShowAvatarUrlInput(false);
+                          setTimeout(() => setProfileMessage(''), 3000);
+                        }
+                      }}
+                      className="px-3 py-1.5 bg-indigo-600 text-white text-xs rounded-lg font-bold hover:bg-indigo-700 cursor-pointer flex items-center gap-1"
+                    >
+                      <Check className="w-3.5 h-3.5" />
+                      اعمال
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Profile Details Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">

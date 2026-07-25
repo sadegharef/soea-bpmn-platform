@@ -6,7 +6,9 @@
 import React, { useState, useEffect } from 'react';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { Diagram, DiagramStatus, Folder } from '../types';
-import { Edit3, Tag, UserCheck, Folder as FolderIcon, Save } from 'lucide-react';
+import { Edit3, Tag, UserCheck, Folder as FolderIcon, Save, Settings2 } from 'lucide-react';
+import { TagBadge } from '../utils/tagUtils';
+import { TagBankModal } from './TagBankModal';
 
 interface EditDiagramModalProps {
   isOpen: boolean;
@@ -15,7 +17,7 @@ interface EditDiagramModalProps {
 }
 
 export const EditDiagramModal: React.FC<EditDiagramModalProps> = ({ isOpen, onClose, diagram }) => {
-  const { folders, users, updateDiagram } = useWorkspace();
+  const { folders, users, updateDiagram, tagBank } = useWorkspace();
 
   const [title, setTitle] = useState('');
   const [titleEn, setTitleEn] = useState('');
@@ -24,6 +26,7 @@ export const EditDiagramModal: React.FC<EditDiagramModalProps> = ({ isOpen, onCl
   const [folderId, setFolderId] = useState<string | null>(null);
   const [tagsInput, setTagsInput] = useState('');
   const [reviewerId, setReviewerId] = useState<string>('');
+  const [isTagBankOpen, setIsTagBankOpen] = useState(false);
 
   useEffect(() => {
     if (diagram) {
@@ -173,16 +176,53 @@ export const EditDiagramModal: React.FC<EditDiagramModalProps> = ({ isOpen, onCl
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-              برچسب‌ها و تگ‌ها (جداشده با کاما)
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                برچسب‌ها و تگ‌ها (از بانک تگ‌ها)
+              </label>
+              <button
+                type="button"
+                onClick={() => setIsTagBankOpen(true)}
+                className="text-[11px] text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 font-medium cursor-pointer"
+              >
+                <Settings2 className="w-3.5 h-3.5" />
+                <span>مدیریت بانک تگ‌ها</span>
+              </button>
+            </div>
+
             <input
               type="text"
-              placeholder="As-Is, مالی, اولویت بالا"
+              placeholder="تگ‌ها را با کاما جدا کنید..."
               value={tagsInput}
               onChange={(e) => setTagsInput(e.target.value)}
               className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
+
+            {/* Quick add tag chips with colors from Tag Bank */}
+            <div className="flex items-center gap-1.5 flex-wrap mt-2 max-h-24 overflow-y-auto">
+              <span className="text-[10px] text-slate-400 shrink-0">انتخاب از بانک تگ‌ها:</span>
+              {tagBank.map((item) => {
+                const currentList = tagsInput.split(',').map(t => t.trim().replace(/^#/, '')).filter(Boolean);
+                const isSelected = currentList.some(t => t.toLowerCase() === item.name.toLowerCase());
+
+                return (
+                  <TagBadge
+                    key={item.id}
+                    tag={item.name}
+                    color={item.color}
+                    size="sm"
+                    onClick={() => {
+                      if (isSelected) {
+                        const updated = currentList.filter(t => t.toLowerCase() !== item.name.toLowerCase());
+                        setTagsInput(updated.join(', '));
+                      } else {
+                        setTagsInput([...currentList, item.name].join(', '));
+                      }
+                    }}
+                  />
+                );
+              })}
+            </div>
           </div>
 
           <div>
@@ -215,6 +255,17 @@ export const EditDiagramModal: React.FC<EditDiagramModalProps> = ({ isOpen, onCl
             </button>
           </div>
         </form>
+
+        <TagBankModal
+          isOpen={isTagBankOpen}
+          onClose={() => setIsTagBankOpen(false)}
+          onSelectTag={(tagName) => {
+            const currentList = tagsInput.split(',').map(t => t.trim().replace(/^#/, '')).filter(Boolean);
+            if (!currentList.some(t => t.toLowerCase() === tagName.toLowerCase())) {
+              setTagsInput([...currentList, tagName].join(', '));
+            }
+          }}
+        />
       </div>
     </div>
   );

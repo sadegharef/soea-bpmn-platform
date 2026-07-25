@@ -8,10 +8,16 @@
  */
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User, Team, TeamRole, Folder, Diagram, DiagramStatus, ReviewComment } from '../types';
-import { INITIAL_USERS, INITIAL_TEAMS, INITIAL_FOLDERS, INITIAL_DIAGRAMS } from '../data/initialData';
+import { User, Team, TeamRole, Folder, Diagram, DiagramStatus, ReviewComment, TagItem } from '../types';
+import { INITIAL_USERS, INITIAL_TEAMS, INITIAL_FOLDERS, INITIAL_DIAGRAMS, INITIAL_TAG_BANK } from '../data/initialData';
 
 interface WorkspaceContextType {
+  // بانک تگ‌ها
+  tagBank: TagItem[];
+  addTagToBank: (name: string, color: string) => TagItem;
+  updateTagInBank: (id: string, name: string, color: string) => void;
+  deleteTagFromBank: (id: string) => void;
+
   // مدیریت کاربران و احراز هویت
   currentUser: User | null;
   users: User[];
@@ -20,6 +26,7 @@ interface WorkspaceContextType {
   loginUser: (usernameOrEmail: string, password: string) => { success: boolean; error?: string };
   logoutUser: () => void;
   registerUser: (userData: { name: string; nameEn?: string; email: string; username?: string; password?: string; jobTitle?: string }) => User;
+  updateUserProfile: (data: { avatar?: string; name?: string; nameEn?: string; jobTitle?: string }) => void;
   
   // مدیریت تیم‌ها و سطوح دسترسی (RBAC)
   activeTeam: Team;
@@ -97,6 +104,12 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     return INITIAL_USERS;
   });
 
+  // بانک تگ‌ها
+  const [tagBank, setTagBank] = useState<TagItem[]>(() => {
+    const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_tag_bank`);
+    return saved ? JSON.parse(saved) : INITIAL_TAG_BANK;
+  });
+
   // کاربر فعال ورودی (در صورت عدم وجود در localStorage کاربر ورود نکرده و ابتدا صفحه ورود نشان داده می‌شود)
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
     const saved = localStorage.getItem(`${LOCAL_STORAGE_KEY}_current_user`);
@@ -166,6 +179,40 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   useEffect(() => {
     localStorage.setItem(`${LOCAL_STORAGE_KEY}_diagrams`, JSON.stringify(diagrams));
   }, [diagrams]);
+
+  useEffect(() => {
+    localStorage.setItem(`${LOCAL_STORAGE_KEY}_tag_bank`, JSON.stringify(tagBank));
+  }, [tagBank]);
+
+  // توابع مدیریت بانک تگ‌ها
+  const addTagToBank = (name: string, color: string): TagItem => {
+    const trimmedName = name.trim();
+    const existing = tagBank.find(t => t.name.toLowerCase() === trimmedName.toLowerCase());
+    if (existing) {
+      // اگر تگ وجود دارد اما رنگ جدیدی ثبت شده، ویرایشش می‌کنیم
+      if (existing.color !== color) {
+        updateTagInBank(existing.id, existing.name, color);
+      }
+      return existing;
+    }
+
+    const newTag: TagItem = {
+      id: `tag_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      name: trimmedName,
+      color: color || '#3b82f6',
+    };
+
+    setTagBank(prev => [...prev, newTag]);
+    return newTag;
+  };
+
+  const updateTagInBank = (id: string, name: string, color: string) => {
+    setTagBank(prev => prev.map(t => t.id === id ? { ...t, name: name.trim(), color } : t));
+  };
+
+  const deleteTagFromBank = (id: string) => {
+    setTagBank(prev => prev.filter(t => t.id !== id));
+  };
 
   // محاسبه تیم و فرآیند فعال
   const activeTeam = teams.find(t => t.id === activeTeamId) || teams[0] || INITIAL_TEAMS[0];
@@ -263,6 +310,28 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }));
 
     return newUser;
+  };
+
+  const updateUserProfile = (data: { avatar?: string; name?: string; nameEn?: string; jobTitle?: string }) => {
+    if (!currentUser) return;
+
+    const updatedUser: User = {
+      ...currentUser,
+      ...(data.avatar !== undefined && { avatar: data.avatar }),
+      ...(data.name !== undefined && { name: data.name }),
+      ...(data.nameEn !== undefined && { nameEn: data.nameEn }),
+      ...(data.jobTitle !== undefined && { jobTitle: data.jobTitle }),
+    };
+
+    setCurrentUser(updatedUser);
+
+    setUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
+
+    // Update in teams as well
+    setTeams(prevTeams => prevTeams.map(t => ({
+      ...t,
+      members: t.members.map(m => m.userId === updatedUser.id ? { ...m, user: updatedUser } : m)
+    })));
   };
 
   // مدیریت تیم
@@ -545,6 +614,10 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   return (
     <WorkspaceContext.Provider value={{
+      tagBank,
+      addTagToBank,
+      updateTagInBank,
+      deleteTagFromBank,
       currentUser,
       users,
       isAuthenticated,
@@ -552,6 +625,7 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       loginUser,
       logoutUser,
       registerUser,
+      updateUserProfile,
       activeTeam,
       teams,
       switchTeam,

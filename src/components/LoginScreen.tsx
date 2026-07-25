@@ -91,21 +91,21 @@ export const LoginScreen: React.FC = () => {
               <div className="p-3.5 bg-slate-800/60 rounded-2xl border border-slate-700/50">
                 <h4 className="text-xs font-bold text-indigo-400 mb-1">مدلسازی تعاملی BPMN 2.0</h4>
                 <p className="text-[11px] text-slate-300 leading-relaxed">
-                  طراحی دیاگرام‌های استاندارد، ممیزی هوشمند، شبیه‌سازی توکن و خروجی‌های چندگانه.
+                  طراحی دیاگرام‌های استاندارد، بازبینی هوشمند، شبیه‌سازی توکن و خروجی‌های چندگانه.
                 </p>
               </div>
 
               <div className="p-3.5 bg-slate-800/60 rounded-2xl border border-slate-700/50">
                 <h4 className="text-xs font-bold text-emerald-400 mb-1">مدیریت نسخه و نظرات یکپارچه</h4>
                 <p className="text-[11px] text-slate-300 leading-relaxed">
-                  ثبت تاریخچه تغییرات، مقایسه بصری نسخه‌ها (Visual Diff) و ثبت نظرات ممیزان.
+                  ثبت تاریخچه تغییرات، مقایسه بصری نسخه‌ها (Visual Diff) و ثبت نظرات بازبینان.
                 </p>
               </div>
 
               <div className="p-3.5 bg-slate-800/60 rounded-2xl border border-slate-700/50">
                 <h4 className="text-xs font-bold text-amber-400 mb-1">همکاری تیمی و کنترل دسترسی (RBAC)</h4>
                 <p className="text-[11px] text-slate-300 leading-relaxed">
-                  سطوح دسترسی مدیر، ویرایش‌گر، ممیز و مشاهده‌کننده همراه با ساختار درختی پوشه‌ها.
+                  سطوح دسترسی مدیر، ویرایش‌گر، بازبین و مشاهده‌کننده همراه با ساختار درختی پوشه‌ها.
                 </p>
               </div>
             </div>

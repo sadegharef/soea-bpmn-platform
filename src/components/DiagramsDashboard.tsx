@@ -15,6 +15,7 @@ import { TeamManagementModal } from './TeamManagementModal';
 import { CreateDiagramModal } from './CreateDiagramModal';
 import { EditDiagramModal } from './EditDiagramModal';
 import { MoveModal } from './MoveModal';
+import { TagBankModal } from './TagBankModal';
 import { Diagram } from '../types';
 import { 
   Workflow, 
@@ -30,7 +31,8 @@ import {
   ChevronDown, 
   Sun, 
   Moon, 
-  LogOut
+  LogOut,
+  Tag
 } from 'lucide-react';
 
 interface DiagramsDashboardProps {
@@ -57,6 +59,7 @@ export const DiagramsDashboard: React.FC<DiagramsDashboardProps> = ({ theme, set
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isTagBankModalOpen, setIsTagBankModalOpen] = useState(false);
   
   const [editDiagramState, setEditDiagramState] = useState<{
     isOpen: boolean;
@@ -100,7 +103,7 @@ export const DiagramsDashboard: React.FC<DiagramsDashboardProps> = ({ theme, set
 
   const breadcrumbs = getBreadcrumbPath(selectedFolderId);
 
-  // منطق فیلتر کردن هوشمند دیاگرام‌ها بر اساس پوشه، جستجو، وضعیت و ممیز
+  // منطق فیلتر کردن هوشمند دیاگرام‌ها بر اساس پوشه، جستجو، وضعیت و مسئول بازبینی
   const filteredDiagrams = diagrams.filter(d => {
     // ۱. تطابق پوشه: نمایش فرآیندهای پوشه انتخاب‌شده و زیرپوشه‌های آن
     if (selectedFolderId !== null) {
@@ -125,7 +128,7 @@ export const DiagramsDashboard: React.FC<DiagramsDashboardProps> = ({ theme, set
     // ۳. فیلتر وضعیت چرخه حیات
     if (statusFilter !== 'ALL' && d.status !== statusFilter) return false;
 
-    // ۴. فیلتر ممیز و بازبینی‌کننده
+    // ۴. فیلتر مسئول بازبینی
     if (reviewerFilter !== 'ALL' && d.reviewerId !== reviewerFilter) return false;
 
     return true;
@@ -158,17 +161,9 @@ export const DiagramsDashboard: React.FC<DiagramsDashboardProps> = ({ theme, set
               <Workflow className="w-6 h-6 text-white" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h1 className="font-extrabold text-base sm:text-lg text-white tracking-tight">
-                  سامانه هم‌نگار - پنل مدیریت فرآیندها
-                </h1>
-                <span className="text-[10px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-mono px-2 py-0.5 rounded-full">
-                  هم‌نگار v2.5
-                </span>
-              </div>
-              <p className="text-xs text-slate-400 hidden sm:block">
-                طراحی، بازبینی گروهی و نسخه‌گذاری استانداردهای BPMN 2.0
-              </p>
+              <h1 className="font-extrabold text-base sm:text-lg text-white tracking-tight">
+                سامانه هم‌نگار - پنل مدیریت فرآیندها
+              </h1>
             </div>
           </div>
 
@@ -389,13 +384,13 @@ export const DiagramsDashboard: React.FC<DiagramsDashboardProps> = ({ theme, set
                   <option value="needs_revision">نیازمند اصلاح</option>
                 </select>
 
-                {/* فیلتر ممیز */}
+                {/* فیلتر مسئول بازبینی */}
                 <select
                   value={reviewerFilter}
                   onChange={(e) => setReviewerFilter(e.target.value)}
                   className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-lg px-2.5 py-1 font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer"
                 >
-                  <option value="ALL">همه ممیزها</option>
+                  <option value="ALL">همه بازبین‌ها</option>
                   {users.map(u => (
                     <option key={u.id} value={u.id}>{u.name}</option>
                   ))}
@@ -456,6 +451,20 @@ export const DiagramsDashboard: React.FC<DiagramsDashboardProps> = ({ theme, set
 
       </main>
 
+      {/* فوتر سامانه هم‌نگار */}
+      <footer className="mt-8 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 py-4 px-6 text-xs text-slate-500 dark:text-slate-400">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-right">
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-slate-800 dark:text-slate-200">سامانه مدیریت فرآیندهای هم‌نگار</span>
+            <span className="text-slate-300 dark:text-slate-700">|</span>
+            <span className="font-mono text-[11px]">نسخه ۲.۳.۰</span>
+          </div>
+          <div className="flex items-center gap-4 text-[11px]">
+            <span>کلیه حقوق مادی و معنوی متعلق به سامانه هم‌نگار است.</span>
+          </div>
+        </div>
+      </footer>
+
       {/* مدال‌های عملیاتی */}
       <AuthModal
         isOpen={isAuthModalOpen}
@@ -484,6 +493,11 @@ export const DiagramsDashboard: React.FC<DiagramsDashboardProps> = ({ theme, set
         itemType={moveModalState.itemType}
         itemId={moveModalState.itemId}
         itemTitle={moveModalState.itemTitle}
+      />
+
+      <TagBankModal
+        isOpen={isTagBankModalOpen}
+        onClose={() => setIsTagBankModalOpen(false)}
       />
 
     </div>
