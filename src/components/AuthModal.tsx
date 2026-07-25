@@ -1,13 +1,11 @@
 /**
  * @file AuthModal.tsx
- * @description پنجره ورود، ثبت‌نام و مدیریت حساب کاربری در سامانه
- * @architecture
- * - Single Responsibility Principle (SRP): احراز هویت، سوئیچ بین اکانت‌ها و ثبت کاربر جدید
+ * @description پنجره مدیریت حساب کاربری، مشخصات پروفایل و سوئیچ بین اکانت‌ها در سامانه هم‌نگار
  */
 
 import React, { useState } from 'react';
 import { useWorkspace } from '../context/WorkspaceContext';
-import { LogIn, UserPlus, LogOut, Shield, KeyRound, User, Mail, Briefcase, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { LogIn, UserPlus, LogOut, Shield, KeyRound, User, Mail, Briefcase, AlertCircle, CheckCircle2, UserCheck, RefreshCw } from 'lucide-react';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -15,8 +13,8 @@ interface AuthModalProps {
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
-  const { currentUser, loginUser, logoutUser, registerUser, isAuthenticated } = useWorkspace();
-  const [activeTab, setActiveTab] = useState<'login' | 'register'>('login');
+  const { currentUser, loginUser, logoutUser, registerUser, currentRole } = useWorkspace();
+  const [activeTab, setActiveTab] = useState<'profile' | 'login' | 'register'>(currentUser ? 'profile' : 'login');
   
   // Login State
   const [usernameOrEmail, setUsernameOrEmail] = useState('');
@@ -33,6 +31,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   const [registerSuccess, setRegisterSuccess] = useState(false);
 
   if (!isOpen) return null;
+
+  const getRoleLabel = (role: string) => {
+    switch (role) {
+      case 'manager': return 'مدیر سیستم و تیم';
+      case 'editor': return 'ویرایش‌گر مدلساز';
+      case 'reviewer': return 'مسئول ارزیابی و بازبینی';
+      default: return 'مشاهده‌کننده فرآیندها';
+    }
+  };
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,40 +96,33 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
               <Shield className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-extrabold text-base text-white">درگاه احراز هویت و ورود عملیاتی</h3>
-              <p className="text-xs text-slate-400">ورود با نام کاربری و کلمه عبور یا ساخت حساب کاربری جدید</p>
+              <h3 className="font-extrabold text-base text-white">مدیریت حساب کاربری هم‌نگار</h3>
+              <p className="text-xs text-slate-400">مشخصات کاربر جاری، نقش سازمانی و احراز هویت</p>
             </div>
           </div>
           <button 
             onClick={onClose}
-            className="text-slate-400 hover:text-white text-lg p-1.5 rounded-xl hover:bg-white/10 transition"
+            className="text-slate-400 hover:text-white text-lg p-1.5 rounded-xl hover:bg-white/10 transition cursor-pointer"
           >
             ✕
           </button>
         </div>
 
-        {/* Currently Logged In Banner */}
-        {currentUser && (
-          <div className="p-3.5 bg-indigo-50/60 dark:bg-indigo-950/40 border-b border-indigo-100 dark:border-indigo-900/50 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <img src={currentUser.avatar} alt={currentUser.name} className="w-9 h-9 rounded-full object-cover border-2 border-indigo-500/40" />
-              <div>
-                <span className="text-xs font-bold text-slate-900 dark:text-white block">{currentUser.name}</span>
-                <span className="text-[11px] text-indigo-600 dark:text-indigo-400 block font-mono">@{currentUser.username || 'user'} • {currentUser.jobTitle || 'کاربر سیستم'}</span>
-              </div>
-            </div>
-            <button
-              onClick={() => logoutUser()}
-              className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              <span>خروج از حساب</span>
-            </button>
-          </div>
-        )}
-
         {/* Tabs Switcher */}
         <div className="flex border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/80 p-1.5">
+          {currentUser && (
+            <button
+              onClick={() => setActiveTab('profile')}
+              className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition flex items-center justify-center gap-2 ${
+                activeTab === 'profile'
+                  ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm border border-slate-200/60 dark:border-slate-700/60'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+              }`}
+            >
+              <User className="w-4 h-4" />
+              <span>پروفایل من</span>
+            </button>
+          )}
           <button
             onClick={() => { setActiveTab('login'); setLoginError(''); }}
             className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition flex items-center justify-center gap-2 ${
@@ -132,7 +132,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
             }`}
           >
             <LogIn className="w-4 h-4" />
-            <span>ورود به حساب کاربری</span>
+            <span>{currentUser ? 'تعویض حساب' : 'ورود'}</span>
           </button>
           <button
             onClick={() => { setActiveTab('register'); setLoginError(''); }}
@@ -143,13 +143,86 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
             }`}
           >
             <UserPlus className="w-4 h-4" />
-            <span>ثبت‌نام کاربر جدید</span>
+            <span>ثبت‌نام جدید</span>
           </button>
         </div>
 
         {/* Tab Contents */}
         <div className="p-6 max-h-[70vh] overflow-y-auto">
-          {activeTab === 'login' ? (
+          {activeTab === 'profile' && currentUser ? (
+            <div className="space-y-5">
+              
+              {/* User Identity Card */}
+              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 flex items-center gap-4">
+                <img
+                  src={currentUser.avatar}
+                  alt={currentUser.name}
+                  className="w-16 h-16 rounded-2xl object-cover border-2 border-indigo-500 shadow-md"
+                />
+                <div className="space-y-1">
+                  <h4 className="font-extrabold text-base text-slate-900 dark:text-white">
+                    {currentUser.name}
+                  </h4>
+                  {currentUser.nameEn && (
+                    <p className="text-xs text-slate-400 font-mono dir-ltr text-right">{currentUser.nameEn}</p>
+                  )}
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-xs font-bold border border-indigo-500/20">
+                    <UserCheck className="w-3.5 h-3.5" />
+                    {getRoleLabel(currentRole)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Profile Details Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <div className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700/60 space-y-1">
+                  <span className="text-slate-400 flex items-center gap-1">
+                    <User className="w-3.5 h-3.5 text-indigo-400" />
+                    <span>نام کاربری:</span>
+                  </span>
+                  <span className="font-bold text-slate-900 dark:text-slate-100 block font-mono">@{currentUser.username || 'user'}</span>
+                </div>
+
+                <div className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700/60 space-y-1">
+                  <span className="text-slate-400 flex items-center gap-1">
+                    <Mail className="w-3.5 h-3.5 text-indigo-400" />
+                    <span>ایمیل سازمانی:</span>
+                  </span>
+                  <span className="font-bold text-slate-900 dark:text-slate-100 block font-mono">{currentUser.email}</span>
+                </div>
+
+                <div className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700/60 space-y-1 sm:col-span-2">
+                  <span className="text-slate-400 flex items-center gap-1">
+                    <Briefcase className="w-3.5 h-3.5 text-indigo-400" />
+                    <span>سمت / عنوان شغلی:</span>
+                  </span>
+                  <span className="font-bold text-slate-900 dark:text-slate-100 block">{currentUser.jobTitle || 'کارشناس فرآیند'}</span>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="pt-2 flex items-center gap-3">
+                <button
+                  onClick={() => {
+                    logoutUser();
+                    onClose();
+                  }}
+                  className="flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition shadow-md shadow-rose-600/20 flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>خروج از حساب کاربری</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('login')}
+                  className="px-4 py-2.5 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold hover:bg-slate-300 dark:hover:bg-slate-700 transition flex items-center gap-1.5 cursor-pointer"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  <span>تعویض حساب</span>
+                </button>
+              </div>
+
+            </div>
+          ) : activeTab === 'login' ? (
             <form onSubmit={handleLogin} className="space-y-4">
               {loginError && (
                 <div className="p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 rounded-2xl text-rose-700 dark:text-rose-300 text-xs flex items-center gap-2">
@@ -194,7 +267,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 
               <button
                 type="submit"
-                className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-xs transition shadow-md shadow-indigo-600/20 flex items-center justify-center gap-2 mt-2"
+                className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-xs transition shadow-md shadow-indigo-600/20 flex items-center justify-center gap-2 mt-2 cursor-pointer"
               >
                 <LogIn className="w-4 h-4" />
                 <span>ورود به سیستم عملیاتی</span>
@@ -209,7 +282,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                   <button
                     type="button"
                     onClick={() => fillQuickAccount('ali.rezaei', '123')}
-                    className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800/60 hover:bg-slate-200 dark:hover:bg-slate-800 text-right border border-slate-200/80 dark:border-slate-700/60 transition"
+                    className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800/60 hover:bg-slate-200 dark:hover:bg-slate-800 text-right border border-slate-200/80 dark:border-slate-700/60 transition cursor-pointer"
                   >
                     <div className="font-bold text-slate-800 dark:text-slate-200">علی رضایی (مدیر)</div>
                     <div className="text-[10px] text-slate-400 font-mono">ali.rezaei / 123</div>
@@ -217,7 +290,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                   <button
                     type="button"
                     onClick={() => fillQuickAccount('m.ahmadi', '123')}
-                    className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800/60 hover:bg-slate-200 dark:hover:bg-slate-800 text-right border border-slate-200/80 dark:border-slate-700/60 transition"
+                    className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800/60 hover:bg-slate-200 dark:hover:bg-slate-800 text-right border border-slate-200/80 dark:border-slate-700/60 transition cursor-pointer"
                   >
                     <div className="font-bold text-slate-800 dark:text-slate-200">مریم احمدی (بازبین)</div>
                     <div className="text-[10px] text-slate-400 font-mono">m.ahmadi / 123</div>
@@ -225,7 +298,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                   <button
                     type="button"
                     onClick={() => fillQuickAccount('sara.h', '123')}
-                    className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800/60 hover:bg-slate-200 dark:hover:bg-slate-800 text-right border border-slate-200/80 dark:border-slate-700/60 transition"
+                    className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800/60 hover:bg-slate-200 dark:hover:bg-slate-800 text-right border border-slate-200/80 dark:border-slate-700/60 transition cursor-pointer"
                   >
                     <div className="font-bold text-slate-800 dark:text-slate-200">سارا حسینی (ویرایشگر)</div>
                     <div className="text-[10px] text-slate-400 font-mono">sara.h / 123</div>
@@ -233,7 +306,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                   <button
                     type="button"
                     onClick={() => fillQuickAccount('reza.m', '123')}
-                    className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800/60 hover:bg-slate-200 dark:hover:bg-slate-800 text-right border border-slate-200/80 dark:border-slate-700/60 transition"
+                    className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800/60 hover:bg-slate-200 dark:hover:bg-slate-800 text-right border border-slate-200/80 dark:border-slate-700/60 transition cursor-pointer"
                   >
                     <div className="font-bold text-slate-800 dark:text-slate-200">رضا محمدی (مشاهده‌گر)</div>
                     <div className="text-[10px] text-slate-400 font-mono">reza.m / 123</div>
@@ -321,7 +394,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 
               <button
                 type="submit"
-                className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-xs transition shadow-md shadow-indigo-600/20 flex items-center justify-center gap-2 mt-2"
+                className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-xs transition shadow-md shadow-indigo-600/20 flex items-center justify-center gap-2 mt-2 cursor-pointer"
               >
                 <UserPlus className="w-4 h-4" />
                 <span>ثبت‌نام و ایجاد حساب جدید</span>

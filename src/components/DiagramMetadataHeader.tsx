@@ -1,19 +1,17 @@
 /**
  * @file DiagramMetadataHeader.tsx
  * @description هدر یکپارچه و جامع سامانه هم‌نگار با ادغام کامل اکشن‌های بوم (Undo/Redo)، خروجی‌گیری، کنترل نسخه‌ها، نظرات و مدیریت
- * @architecture
- * - Single Responsibility Principle (SRP): ارائه یکپارچه تمام کنترل‌های فوقانی بوم و مدیریت همنگار
  */
 
 import React, { useState } from 'react';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { DiagramStatus } from '../types';
+import { EditDiagramModal } from './EditDiagramModal';
 import { 
   ArrowRight, 
   Workflow, 
   Folder as FolderIcon, 
   UserCheck, 
-  Users, 
   CheckCircle2, 
   Clock, 
   AlertCircle, 
@@ -30,7 +28,8 @@ import {
   Download,
   Link2,
   Globe,
-  ChevronDown
+  ChevronDown,
+  Edit3
 } from 'lucide-react';
 
 interface DiagramMetadataHeaderProps {
@@ -72,16 +71,14 @@ export const DiagramMetadataHeader: React.FC<DiagramMetadataHeaderProps> = ({
     users, 
     currentUser, 
     logoutUser,
-    currentRole,
-    teams,
-    activeTeamId,
-    switchTeam
+    currentRole
   } = useWorkspace();
 
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editedTitle, setEditedTitle] = useState(activeDiagram?.title || '');
 
-  // Save Version Dialog
+  // Modal States
+  const [isEditInfoOpen, setIsEditInfoOpen] = useState(false);
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
   const [changeSummary, setChangeSummary] = useState('');
 
@@ -91,6 +88,46 @@ export const DiagramMetadataHeader: React.FC<DiagramMetadataHeaderProps> = ({
 
   if (!activeDiagram) return null;
 
+  const isEn = lang === 'en';
+
+  const t = {
+    brandTitle: isEn ? 'Hamnegar' : 'هم‌نگار',
+    brandSubtitle: isEn ? 'Process Modeler' : 'مدلساز فرآیندها',
+    dashboardBtn: isEn ? 'Dashboard' : 'داشبورد هم‌نگار',
+    dashboardTooltip: isEn ? 'Back to Hamnegar Management Panel' : 'بازگشت به پنل مدیریت فرآیندهای هم‌نگار',
+    editInfoBtn: isEn ? 'Edit Metadata' : 'ویرایش مشخصات',
+    editInfoTooltip: isEn ? 'Edit process title, tags & reviewer' : 'ویرایش مشخصات، برچسب‌ها و ممیز فرآیند',
+    version: isEn ? 'Version' : 'نسخه',
+    folderRoot: isEn ? 'Root Directory' : 'پوشه اصلی ریشه',
+    reviewer: isEn ? 'Reviewer:' : 'ممیز:',
+    unassigned: isEn ? 'Unassigned' : 'تعیین‌نشده',
+    undoTooltip: isEn ? 'Undo Action' : 'بازگردانی تغییر (Undo)',
+    redoTooltip: isEn ? 'Redo Action' : 'اعمال مجدد تغییر (Redo)',
+    commentsBtn: isEn ? 'Comments' : 'نظرات',
+    commentsTooltip: isEn ? 'Process Comments & Review' : 'نظرات و ارزیابی فرآیند',
+    historyBtn: isEn ? 'History' : 'تاریخچه نسخ',
+    historyTooltip: isEn ? 'Saved Version History' : 'تاریخچه نسخه‌های ذخیره‌شده',
+    exportBtn: isEn ? 'Share & Export' : 'اشتراک و خروجی',
+    exportTooltip: isEn ? 'Download & Share Process' : 'دانلود و اشتراک فرآیند',
+    copyLink: isEn ? 'Copy Share Link' : 'کپی لینک اشتراک',
+    copiedLink: isEn ? 'Link Copied!' : 'لینک کپی شد!',
+    exportBpmn: isEn ? 'Download BPMN XML' : 'دانلود فایل BPMN XML',
+    exportSvg: isEn ? 'Download SVG Image' : 'دانلود تصویر SVG',
+    exportPng: isEn ? 'Download PNG Image' : 'دانلود تصویر PNG',
+    saveVersionBtn: isEn ? 'Publish Version' : 'ثبت نسخه جدید',
+    saveVersionTitle: isEn ? 'Publish New Version' : 'ثبت و انتشار نسخه جدید',
+    saveVersionDesc: isEn ? 'Describe the changes made in this release' : 'تغییرات انجام‌شده در این نوبت را شرح دهید',
+    changeSummaryLabel: isEn ? 'Change Summary:' : 'خلاصه تغییرات:',
+    changeSummaryPlaceholder: isEn ? 'e.g., Updated decision gateway and approval flow...' : 'مانند: اصلاح گیت‌وی تصمیم‌گیری، تغییر مسیر فرآیند...',
+    confirmSave: isEn ? 'Publish Version' : 'ثبت نسخه جدید',
+    cancel: isEn ? 'Cancel' : 'انصراف',
+    statusDraft: isEn ? 'Draft' : 'پیش‌نویس',
+    statusInReview: isEn ? 'In Review' : 'در حال بازبینی',
+    statusApproved: isEn ? 'Approved' : 'تایید شده',
+    statusNeedsRevision: isEn ? 'Needs Revision' : 'نیازمند اصلاح',
+    logoutTooltip: isEn ? 'Logout' : 'خروج از حساب کاربری'
+  };
+
   const isManager = currentRole === 'manager';
   const isEditor = currentRole === 'editor';
   const isReviewer = currentRole === 'reviewer';
@@ -99,9 +136,9 @@ export const DiagramMetadataHeader: React.FC<DiagramMetadataHeaderProps> = ({
 
   // Folder path string
   const getFolderPath = (folderId: string | null): string => {
-    if (!folderId) return 'پوشه اصلی ریشه';
+    if (!folderId) return t.folderRoot;
     const folder = folders.find(f => f.id === folderId);
-    if (!folder) return 'پوشه اصلی ریشه';
+    if (!folder) return t.folderRoot;
     if (folder.parentId) {
       return `${getFolderPath(folder.parentId)} / ${folder.name}`;
     }
@@ -129,7 +166,7 @@ export const DiagramMetadataHeader: React.FC<DiagramMetadataHeaderProps> = ({
 
   const handleConfirmSaveVersion = (e: React.FormEvent) => {
     e.preventDefault();
-    onSaveVersion(changeSummary.trim() || 'ویرایش و بروزرسانی دیاگرام');
+    onSaveVersion(changeSummary.trim() || (isEn ? 'Updated process diagram' : 'ویرایش و بروزرسانی دیاگرام'));
     setChangeSummary('');
     setIsSaveModalOpen(false);
   };
@@ -147,28 +184,28 @@ export const DiagramMetadataHeader: React.FC<DiagramMetadataHeaderProps> = ({
         return (
           <span className="inline-flex items-center gap-1 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2.5 py-0.5 rounded-full text-xs font-semibold">
             <CheckCircle2 className="w-3.5 h-3.5" />
-            تایید شده
+            {t.statusApproved}
           </span>
         );
       case 'in_review':
         return (
           <span className="inline-flex items-center gap-1 bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2.5 py-0.5 rounded-full text-xs font-semibold">
             <Clock className="w-3.5 h-3.5" />
-            در حال بازبینی
+            {t.statusInReview}
           </span>
         );
       case 'needs_revision':
         return (
           <span className="inline-flex items-center gap-1 bg-rose-500/20 text-rose-300 border border-rose-500/30 px-2.5 py-0.5 rounded-full text-xs font-semibold">
             <AlertCircle className="w-3.5 h-3.5" />
-            نیازمند اصلاح
+            {t.statusNeedsRevision}
           </span>
         );
       default:
         return (
           <span className="inline-flex items-center gap-1 bg-slate-500/20 text-slate-300 border border-slate-500/30 px-2.5 py-0.5 rounded-full text-xs font-semibold">
             <FileText className="w-3.5 h-3.5" />
-            پیش‌نویس
+            {t.statusDraft}
           </span>
         );
     }
@@ -176,20 +213,20 @@ export const DiagramMetadataHeader: React.FC<DiagramMetadataHeaderProps> = ({
 
   return (
     <>
-      <div className="bg-slate-950 border-b border-slate-800 text-white px-4 py-2.5 shadow-xl select-none z-40 relative" dir={lang === 'fa' ? 'rtl' : 'ltr'}>
+      <div className="bg-slate-950 border-b border-slate-800 text-white px-4 py-2.5 shadow-xl select-none z-40 relative" dir={isEn ? 'ltr' : 'rtl'}>
         <div className="max-w-full flex flex-col lg:flex-row lg:items-center justify-between gap-3">
           
-          {/* بخش راست: لوگو برند هم‌نگار، دکمه بازگشت و اطلاعات کامل فرآیند */}
+          {/* بخش اصلی: برند، بازگشت، و مشخصات فرآیند */}
           <div className="flex items-center gap-3 min-w-0 flex-wrap">
             
             {/* برند هم‌نگار */}
-            <div className="flex items-center gap-2 pl-3 border-l border-slate-800 shrink-0">
+            <div className={`flex items-center gap-2 shrink-0 ${isEn ? 'pr-3 border-r' : 'pl-3 border-l'} border-slate-800`}>
               <div className="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-md shadow-indigo-600/30">
                 <Workflow className="w-5 h-5" />
               </div>
               <div className="hidden xl:block">
-                <span className="font-extrabold text-sm text-white tracking-tight block">هم‌نگار</span>
-                <span className="text-[10px] text-indigo-300 block">مدلساز فرآیندها</span>
+                <span className="font-extrabold text-sm text-white tracking-tight block">{t.brandTitle}</span>
+                <span className="text-[10px] text-indigo-300 block">{t.brandSubtitle}</span>
               </div>
             </div>
 
@@ -197,13 +234,13 @@ export const DiagramMetadataHeader: React.FC<DiagramMetadataHeaderProps> = ({
             <button
               onClick={closeModelerToDashboard}
               className="px-2.5 py-1.5 bg-slate-800/90 hover:bg-slate-700 text-slate-200 hover:text-white rounded-xl border border-slate-700 transition flex items-center gap-1.5 text-xs font-bold shrink-0 cursor-pointer"
-              title="بازگشت به پنل مدیریت فرآیندهای هم‌نگار"
+              title={t.dashboardTooltip}
             >
-              <ArrowRight className="w-4 h-4 text-indigo-400" />
-              <span>داشبورد هم‌نگار</span>
+              <ArrowRight className={`w-4 h-4 text-indigo-400 ${isEn ? 'rotate-180' : ''}`} />
+              <span>{t.dashboardBtn}</span>
             </button>
 
-            {/* اطلاعات فرآیند: عنوان، وضعیت، نسخه، پوشه و ممیز */}
+            {/* اطلاعات فرآیند */}
             <div className="min-w-0 space-y-0.5">
               <div className="flex items-center gap-2 flex-wrap">
                 
@@ -222,10 +259,21 @@ export const DiagramMetadataHeader: React.FC<DiagramMetadataHeaderProps> = ({
                   <h2 
                     onClick={() => canEditModel && setIsEditingTitle(true)}
                     className={`font-bold text-sm text-white truncate max-w-xs ${canEditModel ? 'hover:text-indigo-300 cursor-pointer' : ''}`}
-                    title={canEditModel ? 'برای تغییر عنوان فرآیند کلیک کنید' : ''}
+                    title={canEditModel ? (isEn ? 'Click to edit title' : 'برای تغییر سریع عنوان کلیک کنید') : ''}
                   >
-                    {activeDiagram.title}
+                    {isEn && activeDiagram.titleEn ? activeDiagram.titleEn : activeDiagram.title}
                   </h2>
+                )}
+
+                {/* دکمه ویرایش کامل مشخصات فرآیند */}
+                {canEditModel && (
+                  <button
+                    onClick={() => setIsEditInfoOpen(true)}
+                    className="p-1 text-slate-400 hover:text-indigo-300 hover:bg-slate-800 rounded-lg transition cursor-pointer"
+                    title={t.editInfoTooltip}
+                  >
+                    <Edit3 className="w-3.5 h-3.5" />
+                  </button>
                 )}
 
                 {/* وضعیت فرآیند */}
@@ -235,10 +283,10 @@ export const DiagramMetadataHeader: React.FC<DiagramMetadataHeaderProps> = ({
                     onChange={(e) => handleStatusChange(e.target.value as DiagramStatus)}
                     className="bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-200 rounded-lg px-2 py-0.5 cursor-pointer focus:outline-none focus:ring-1 focus:ring-indigo-500"
                   >
-                    <option value="draft">پیش‌نویس</option>
-                    <option value="in_review">در حال بازبینی</option>
-                    <option value="approved">تایید شده</option>
-                    <option value="needs_revision">نیازمند اصلاح</option>
+                    <option value="draft">{t.statusDraft}</option>
+                    <option value="in_review">{t.statusInReview}</option>
+                    <option value="approved">{t.statusApproved}</option>
+                    <option value="needs_revision">{t.statusNeedsRevision}</option>
                   </select>
                 ) : (
                   getStatusBadge(activeDiagram.status)
@@ -246,7 +294,7 @@ export const DiagramMetadataHeader: React.FC<DiagramMetadataHeaderProps> = ({
 
                 {/* شماره نسخه */}
                 <span className="text-[11px] bg-indigo-950 text-indigo-300 border border-indigo-800 px-2 py-0.5 rounded-md font-mono font-bold">
-                  نسخه {activeDiagram.latestVersion}.0
+                  {t.version} {activeDiagram.latestVersion}.0
                 </span>
               </div>
 
@@ -261,13 +309,13 @@ export const DiagramMetadataHeader: React.FC<DiagramMetadataHeaderProps> = ({
                 {isManager ? (
                   <div className="flex items-center gap-1 text-indigo-300">
                     <UserCheck className="w-3 h-3 text-indigo-400" />
-                    <span>ممیز:</span>
+                    <span>{t.reviewer}</span>
                     <select
                       value={activeDiagram.reviewerId || ''}
                       onChange={(e) => handleReviewerChange(e.target.value)}
                       className="bg-slate-900 border border-slate-700 text-[11px] text-slate-200 rounded px-1.5 py-0.2 focus:outline-none"
                     >
-                      <option value="">تعیین‌نشده</option>
+                      <option value="">{t.unassigned}</option>
                       {users.map(u => (
                         <option key={u.id} value={u.id}>{u.name} ({u.jobTitle})</option>
                       ))}
@@ -276,60 +324,44 @@ export const DiagramMetadataHeader: React.FC<DiagramMetadataHeaderProps> = ({
                 ) : (
                   <span className="flex items-center gap-1 text-indigo-300">
                     <UserCheck className="w-3 h-3" />
-                    <span>ممیز: {activeDiagram.reviewerName || 'تعیین‌نشده'}</span>
+                    <span>{t.reviewer} {activeDiagram.reviewerName || t.unassigned}</span>
                   </span>
                 )}
               </div>
             </div>
           </div>
 
-          {/* بخش چپ: اکشن‌های ادغام‌شده بوم و مدیریت */}
+          {/* بخش اکشن‌های بوم و ابزارها */}
           <div className="flex items-center gap-2 justify-end flex-wrap">
             
-            {/* کلیدهای Undo / Redo بسیار مهم */}
+            {/* کلیدهای Undo / Redo */}
             {onUndo && onRedo && (
               <div className="flex items-center bg-slate-900 border border-slate-800 rounded-xl p-0.5">
                 <button
                   onClick={onUndo}
                   className="p-1.5 hover:bg-slate-800 text-slate-300 hover:text-white rounded-lg transition cursor-pointer"
-                  title="بازگردانی تغییر (Undo)"
+                  title={t.undoTooltip}
                 >
                   <Undo2 className="w-4 h-4" />
                 </button>
                 <button
                   onClick={onRedo}
                   className="p-1.5 hover:bg-slate-800 text-slate-300 hover:text-white rounded-lg transition cursor-pointer"
-                  title="اعمال مجدد تغییر (Redo)"
+                  title={t.redoTooltip}
                 >
                   <Redo2 className="w-4 h-4" />
                 </button>
               </div>
             )}
 
-            {/* انتخاب تیم */}
-            {teams.length > 0 && (
-              <div className="hidden md:flex items-center gap-1 bg-slate-900 px-2 py-1 rounded-xl border border-slate-800">
-                <Users className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
-                <select
-                  value={activeTeamId}
-                  onChange={(e) => switchTeam(e.target.value)}
-                  className="bg-transparent text-xs text-slate-200 font-semibold focus:outline-none cursor-pointer"
-                >
-                  {teams.map(t => (
-                    <option key={t.id} value={t.id} className="bg-slate-900 text-white">{t.name}</option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            {/* کشوی نظرات یکپارچه */}
+            {/* کشوی نظرات */}
             <button
               onClick={onToggleCommentsDrawer}
               className="relative px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white rounded-xl border border-slate-700 transition flex items-center gap-1.5 text-xs font-bold cursor-pointer"
-              title="نظرات و ارزیابی فرآیند"
+              title={t.commentsTooltip}
             >
               <MessageSquare className="w-4 h-4 text-indigo-400" />
-              <span className="hidden sm:inline">نظرات</span>
+              <span className="hidden sm:inline">{t.commentsBtn}</span>
               {unresolvedCommentsCount > 0 && (
                 <span className="px-1.5 py-0.2 rounded-full bg-rose-500 text-white text-[10px] font-extrabold">
                   {unresolvedCommentsCount}
@@ -337,14 +369,14 @@ export const DiagramMetadataHeader: React.FC<DiagramMetadataHeaderProps> = ({
               )}
             </button>
 
-            {/* کشوی تاریخچه نسخ یکپارچه */}
+            {/* کشوی تاریخچه نسخ */}
             <button
               onClick={onToggleHistoryDrawer}
               className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white rounded-xl border border-slate-700 transition flex items-center gap-1.5 text-xs font-bold cursor-pointer"
-              title="تاریخچه نسخه‌های ذخیره‌شده"
+              title={t.historyTooltip}
             >
               <History className="w-4 h-4 text-indigo-400" />
-              <span className="hidden sm:inline">تاریخچه نسخ</span>
+              <span className="hidden sm:inline">{t.historyBtn}</span>
             </button>
 
             {/* منوی خروجی‌گیری و اشتراک */}
@@ -352,47 +384,47 @@ export const DiagramMetadataHeader: React.FC<DiagramMetadataHeaderProps> = ({
               <button
                 onClick={() => setIsExportOpen(!isExportOpen)}
                 className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white rounded-xl border border-slate-700 transition flex items-center gap-1.5 text-xs font-bold cursor-pointer"
-                title="دانلود و اشتراک فرآیند"
+                title={t.exportTooltip}
               >
                 <Share2 className="w-4 h-4 text-indigo-400" />
-                <span className="hidden sm:inline">اشتراک و خروجی</span>
+                <span className="hidden sm:inline">{t.exportBtn}</span>
                 <ChevronDown className="w-3.5 h-3.5" />
               </button>
 
               {isExportOpen && (
-                <div className="absolute left-0 mt-2 w-52 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden z-50 p-1.5 space-y-1">
+                <div className={`absolute ${isEn ? 'right-0' : 'left-0'} mt-2 w-52 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden z-50 p-1.5 space-y-1`}>
                   <button
                     onClick={() => { handleCopyLink(); setIsExportOpen(false); }}
-                    className="w-full text-right px-3 py-2 text-xs text-slate-200 hover:bg-slate-800 rounded-xl transition flex items-center gap-2"
+                    className={`w-full ${isEn ? 'text-left' : 'text-right'} px-3 py-2 text-xs text-slate-200 hover:bg-slate-800 rounded-xl transition flex items-center gap-2 cursor-pointer`}
                   >
                     <Link2 className="w-4 h-4 text-indigo-400" />
-                    <span>{copiedLink ? 'لینک کپی شد!' : 'کپی لینک اشتراک'}</span>
+                    <span>{copiedLink ? t.copiedLink : t.copyLink}</span>
                   </button>
                   {onExportBpmn && (
                     <button
                       onClick={() => { onExportBpmn(); setIsExportOpen(false); }}
-                      className="w-full text-right px-3 py-2 text-xs text-slate-200 hover:bg-slate-800 rounded-xl transition flex items-center gap-2"
+                      className={`w-full ${isEn ? 'text-left' : 'text-right'} px-3 py-2 text-xs text-slate-200 hover:bg-slate-800 rounded-xl transition flex items-center gap-2 cursor-pointer`}
                     >
                       <Download className="w-4 h-4 text-emerald-400" />
-                      <span>دانلود فایل BPMN XML</span>
+                      <span>{t.exportBpmn}</span>
                     </button>
                   )}
                   {onExportSvg && (
                     <button
                       onClick={() => { onExportSvg(); setIsExportOpen(false); }}
-                      className="w-full text-right px-3 py-2 text-xs text-slate-200 hover:bg-slate-800 rounded-xl transition flex items-center gap-2"
+                      className={`w-full ${isEn ? 'text-left' : 'text-right'} px-3 py-2 text-xs text-slate-200 hover:bg-slate-800 rounded-xl transition flex items-center gap-2 cursor-pointer`}
                     >
                       <Download className="w-4 h-4 text-amber-400" />
-                      <span>دانلود تصویر SVG</span>
+                      <span>{t.exportSvg}</span>
                     </button>
                   )}
                   {onExportPng && (
                     <button
                       onClick={() => { onExportPng(); setIsExportOpen(false); }}
-                      className="w-full text-right px-3 py-2 text-xs text-slate-200 hover:bg-slate-800 rounded-xl transition flex items-center gap-2"
+                      className={`w-full ${isEn ? 'text-left' : 'text-right'} px-3 py-2 text-xs text-slate-200 hover:bg-slate-800 rounded-xl transition flex items-center gap-2 cursor-pointer`}
                     >
                       <Download className="w-4 h-4 text-sky-400" />
-                      <span>دانلود تصویر PNG</span>
+                      <span>{t.exportPng}</span>
                     </button>
                   )}
                 </div>
@@ -406,7 +438,7 @@ export const DiagramMetadataHeader: React.FC<DiagramMetadataHeaderProps> = ({
                 className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition shadow-md shadow-indigo-600/25 flex items-center gap-1.5 cursor-pointer"
               >
                 <Save className="w-4 h-4" />
-                <span>ثبت نسخه جدید</span>
+                <span>{t.saveVersionBtn}</span>
               </button>
             )}
 
@@ -415,19 +447,19 @@ export const DiagramMetadataHeader: React.FC<DiagramMetadataHeaderProps> = ({
               <button
                 onClick={() => setLang(lang === 'fa' ? 'en' : 'fa')}
                 className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl border border-slate-700 transition cursor-pointer text-xs font-bold flex items-center gap-1"
-                title="تغییر زبان"
+                title={isEn ? 'Switch Language' : 'تغییر زبان'}
               >
                 <Globe className="w-4 h-4 text-indigo-400" />
                 <span>{lang === 'fa' ? 'EN' : 'FA'}</span>
               </button>
             )}
 
-            {/* سوئیچ تم (تنها مرجع تم در سامانه) */}
+            {/* سوئیچ تم */}
             {setTheme && (
               <button
                 onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
                 className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl border border-slate-700 transition cursor-pointer"
-                title="تغییر پوسته (روز / شب)"
+                title={isEn ? 'Toggle Dark/Light Mode' : 'تغییر پوسته (روز / شب)'}
               >
                 {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-indigo-300" />}
               </button>
@@ -435,17 +467,17 @@ export const DiagramMetadataHeader: React.FC<DiagramMetadataHeaderProps> = ({
 
             {/* اطلاعات کاربر و خروج */}
             {currentUser && (
-              <div className="flex items-center gap-2 pr-2 border-r border-slate-800">
+              <div className={`flex items-center gap-2 ${isEn ? 'pl-2 border-l' : 'pr-2 border-r'} border-slate-800`}>
                 <img
                   src={currentUser.avatar}
                   alt={currentUser.name}
                   className="w-7 h-7 rounded-full object-cover border border-indigo-500/50"
-                  title={`${currentUser.name} (${currentUser.jobTitle})`}
+                  title={`${currentUser.name} (${currentUser.jobTitle || ''})`}
                 />
                 <button
                   onClick={logoutUser}
                   className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition cursor-pointer"
-                  title="خروج از حساب کاربری"
+                  title={t.logoutTooltip}
                 >
                   <LogOut className="w-4 h-4" />
                 </button>
@@ -457,29 +489,38 @@ export const DiagramMetadataHeader: React.FC<DiagramMetadataHeaderProps> = ({
         </div>
       </div>
 
+      {/* مدال ویرایش کامل مشخصات فرآیند */}
+      <EditDiagramModal
+        isOpen={isEditInfoOpen}
+        onClose={() => setIsEditInfoOpen(false)}
+        diagram={activeDiagram}
+      />
+
       {/* مدال ثبت نسخه جدید */}
       {isSaveModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-xs p-4" dir="rtl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-xs p-4" dir={isEn ? 'ltr' : 'rtl'}>
           <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 p-5 space-y-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
                 <Save className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="font-bold text-slate-900 dark:text-white text-base">ثبت و انتشار نسخه جدید (v{activeDiagram.latestVersion + 1}.0)</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">تغییرات انجام‌شده در این نوبت را شرح دهید</p>
+                <h3 className="font-bold text-slate-900 dark:text-white text-base">
+                  {t.saveVersionTitle} (v{activeDiagram.latestVersion + 1}.0)
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">{t.saveVersionDesc}</p>
               </div>
             </div>
 
             <form onSubmit={handleConfirmSaveVersion} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  خلاصه تغییرات:
+                  {t.changeSummaryLabel}
                 </label>
                 <textarea
                   rows={3}
                   required
-                  placeholder="مانند: اصلاح گیت‌وی تصمیم‌گیری، تغییر مسیر فرآیند مرخصی و افزودن وضعیت تایید ممیز..."
+                  placeholder={t.changeSummaryPlaceholder}
                   value={changeSummary}
                   onChange={(e) => setChangeSummary(e.target.value)}
                   className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -491,14 +532,14 @@ export const DiagramMetadataHeader: React.FC<DiagramMetadataHeaderProps> = ({
                   type="submit"
                   className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl transition shadow-md shadow-indigo-600/20 cursor-pointer"
                 >
-                  ثبت نسخه جدید
+                  {t.confirmSave}
                 </button>
                 <button
                   type="button"
                   onClick={() => setIsSaveModalOpen(false)}
                   className="px-4 py-2.5 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs rounded-xl hover:bg-slate-300 transition cursor-pointer"
                 >
-                  انصراف
+                  {t.cancel}
                 </button>
               </div>
             </form>

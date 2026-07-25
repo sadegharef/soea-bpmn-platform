@@ -13,8 +13,9 @@ import { FolderTree } from './FolderTree';
 import { AuthModal } from './AuthModal';
 import { TeamManagementModal } from './TeamManagementModal';
 import { CreateDiagramModal } from './CreateDiagramModal';
+import { EditDiagramModal } from './EditDiagramModal';
 import { MoveModal } from './MoveModal';
-import { Diagram, DiagramStatus } from '../types';
+import { Diagram } from '../types';
 import { 
   Workflow, 
   Search, 
@@ -26,14 +27,10 @@ import {
   Folder as FolderIcon, 
   Layers, 
   UserCheck, 
-  Shield, 
-  CheckCircle2, 
-  Clock, 
-  AlertCircle, 
   ChevronDown, 
   Sun, 
   Moon, 
-  Sparkles 
+  LogOut
 } from 'lucide-react';
 
 interface DiagramsDashboardProps {
@@ -47,6 +44,7 @@ export const DiagramsDashboard: React.FC<DiagramsDashboardProps> = ({ theme, set
     activeTeam, 
     teams, 
     switchTeam, 
+    logoutUser,
     currentRole, 
     folders, 
     selectedFolderId, 
@@ -60,6 +58,14 @@ export const DiagramsDashboard: React.FC<DiagramsDashboardProps> = ({ theme, set
   const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   
+  const [editDiagramState, setEditDiagramState] = useState<{
+    isOpen: boolean;
+    diagram: Diagram | null;
+  }>({
+    isOpen: false,
+    diagram: null
+  });
+
   const [moveModalState, setMoveModalState] = useState<{
     isOpen: boolean;
     itemType: 'diagram' | 'folder';
@@ -144,9 +150,9 @@ export const DiagramsDashboard: React.FC<DiagramsDashboardProps> = ({ theme, set
       
       {/* هدر و نوار ابزار بالای صفحه */}
       <header className="sticky top-0 z-30 bg-slate-900 border-b border-slate-800 text-white shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-col md:flex-row md:items-center justify-between gap-4">
           
-          {/* لوگو و نام سامانه */}
+          {/* عنوان برند هم‌نگار */}
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-indigo-500 flex items-center justify-center shadow-md shadow-indigo-500/20">
               <Workflow className="w-6 h-6 text-white" />
@@ -154,7 +160,7 @@ export const DiagramsDashboard: React.FC<DiagramsDashboardProps> = ({ theme, set
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="font-extrabold text-base sm:text-lg text-white tracking-tight">
-                  سامانه مدیریت و همکاری فرآیندهای هم‌نگار
+                  سامانه هم‌نگار - پنل مدیریت فرآیندها
                 </h1>
                 <span className="text-[10px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-mono px-2 py-0.5 rounded-full">
                   هم‌نگار v2.5
@@ -188,34 +194,43 @@ export const DiagramsDashboard: React.FC<DiagramsDashboardProps> = ({ theme, set
             {/* دکمه مدیریت اعضا و دسترسی‌های تیم */}
             <button
               onClick={() => setIsTeamModalOpen(true)}
-              className="p-2 bg-slate-800 hover:bg-slate-700/80 border border-slate-700 rounded-xl text-slate-300 hover:text-white transition flex items-center gap-1.5 text-xs font-bold"
+              className="p-2 bg-slate-800 hover:bg-slate-700/80 border border-slate-700 rounded-xl text-slate-300 hover:text-white transition flex items-center gap-1.5 text-xs font-bold cursor-pointer"
               title="مدیریت اعضا و دسترسی‌های تیم"
             >
               <Users className="w-4 h-4 text-indigo-400" />
               <span className="hidden md:inline">اعضای تیم</span>
             </button>
 
-            {/* پروفایل کاربر و دکمه ورود/خروج */}
+            {/* پروفایل کاربر و دکمه خروج مستقیم */}
             {currentUser ? (
-              <button
-                onClick={() => setIsAuthModalOpen(true)}
-                className="flex items-center gap-2.5 px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700/80 border border-slate-700/80 rounded-xl transition"
-                title="مدیریت حساب و ورود/خروج"
-              >
-                <img 
-                  src={currentUser.avatar} 
-                  alt={currentUser.name} 
-                  className="w-7 h-7 rounded-full object-cover border border-slate-600"
-                />
-                <div className="text-right hidden sm:block">
-                  <span className="font-bold text-xs text-white block">{currentUser.name}</span>
-                  <span className="text-[10px] text-indigo-300 block">{getRoleBadgeLabel(currentRole)}</span>
-                </div>
-              </button>
+              <div className="flex items-center gap-1 bg-slate-800 border border-slate-700/80 rounded-xl p-1">
+                <button
+                  onClick={() => setIsAuthModalOpen(true)}
+                  className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-slate-700/80 transition cursor-pointer"
+                  title="مشاهده مشخصات حساب کاربری"
+                >
+                  <img 
+                    src={currentUser.avatar} 
+                    alt={currentUser.name} 
+                    className="w-7 h-7 rounded-full object-cover border border-slate-600"
+                  />
+                  <div className="text-right hidden sm:block">
+                    <span className="font-bold text-xs text-white block">{currentUser.name}</span>
+                    <span className="text-[10px] text-indigo-300 block">{getRoleBadgeLabel(currentRole)}</span>
+                  </div>
+                </button>
+                <button
+                  onClick={() => logoutUser()}
+                  className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition cursor-pointer"
+                  title="خروج از حساب کاربری"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
             ) : (
               <button
                 onClick={() => setIsAuthModalOpen(true)}
-                className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition shadow-sm"
+                className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition shadow-sm cursor-pointer"
               >
                 ورود / ثبت‌نام
               </button>
@@ -224,7 +239,7 @@ export const DiagramsDashboard: React.FC<DiagramsDashboardProps> = ({ theme, set
             {/* سوییچ تغییر پوسته (دارک/لایت) */}
             <button
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className="p-2 bg-slate-800 hover:bg-slate-700/80 border border-slate-700 rounded-xl text-slate-300 hover:text-white transition"
+              className="p-2 bg-slate-800 hover:bg-slate-700/80 border border-slate-700 rounded-xl text-slate-300 hover:text-white transition cursor-pointer"
               title="تغییر حالت شب/روز"
             >
               {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-indigo-400" />}
@@ -251,7 +266,7 @@ export const DiagramsDashboard: React.FC<DiagramsDashboardProps> = ({ theme, set
 
           <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-              <Clock className="w-5 h-5" />
+              <Layers className="w-5 h-5" />
             </div>
             <div>
               <span className="text-xs text-slate-500 dark:text-slate-400 block font-medium">در حال بازبینی</span>
@@ -261,33 +276,30 @@ export const DiagramsDashboard: React.FC<DiagramsDashboardProps> = ({ theme, set
 
           <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-              <CheckCircle2 className="w-5 h-5" />
+              <UserCheck className="w-5 h-5" />
             </div>
             <div>
-              <span className="text-xs text-slate-500 dark:text-slate-400 block font-medium">تایید شده</span>
+              <span className="text-xs text-slate-500 dark:text-slate-400 block font-medium">تایید و منتشرشده</span>
               <span className="text-lg font-black text-slate-900 dark:text-white">{approvedCount}</span>
             </div>
           </div>
 
-          <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex items-center justify-between">
-            <div>
-              <span className="text-xs text-slate-500 dark:text-slate-400 block font-medium">اعضای تیم فعلی</span>
-              <span className="text-lg font-black text-slate-900 dark:text-white">{activeTeam.members.length} نفر</span>
+          <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+              <FolderIcon className="w-5 h-5" />
             </div>
-            <button
-              onClick={() => setIsTeamModalOpen(true)}
-              className="text-xs text-indigo-600 dark:text-indigo-400 font-bold hover:underline"
-            >
-              مدیریت
-            </button>
+            <div>
+              <span className="text-xs text-slate-500 dark:text-slate-400 block font-medium">پوشه‌های فعال</span>
+              <span className="text-lg font-black text-slate-900 dark:text-white">{folders.length}</span>
+            </div>
           </div>
         </div>
 
-        {/* چیدمان اصلی: ستون کناری پوشه‌ها + شبکه فرآیندها */}
+        {/* بدنه اصلی با چیدمان ۲ ستونه (درخت پوشه + لیست دیاگرام‌ها) */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
           
-          {/* ستون راست: درخت ساختار پوشه‌ها */}
-          <div className="lg:col-span-1 bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-4 sticky top-20">
+          {/* ستون راست: درخت پوشه‌بندی پیشرفته هم‌نگار */}
+          <div className="lg:col-span-1">
             <FolderTree 
               onOpenMoveModal={(type, id, title) => {
                 setMoveModalState({ isOpen: true, itemType: type, itemId: id, itemTitle: title });
@@ -295,113 +307,114 @@ export const DiagramsDashboard: React.FC<DiagramsDashboardProps> = ({ theme, set
             />
           </div>
 
-          {/* ستون چپ: لیست فرآیندها، نوار ابزار جستجو و فیلتر */}
+          {/* ستون چپ: جستجو، فیلتر و لیست کارت‌های فرآیند */}
           <div className="lg:col-span-3 space-y-4">
             
-            {/* نوار ابزار فوقانی فیلترها و دکمه ایجاد */}
-            <div className="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-4">
+            {/* نوار جستجو، فیلترها و دکمه‌های اکشن */}
+            <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-3">
               
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
                 
-                {/* جعبه ورودی جستجوی متنی */}
-                <div className="relative flex-1">
-                  <Search className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2" />
+                {/* فیلد جستجو */}
+                <div className="relative w-full sm:w-auto sm:flex-1">
+                  <Search className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
-                    placeholder="جستجو در عناوین، توضیحات و برچسب‌های فرآیندها..."
+                    placeholder="جستجو در عنوان، توضیحات یا تگ‌های فرآیندها..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pr-10 pl-4 py-2.5 text-xs rounded-2xl border border-slate-200 dark:border-slate-700/80 bg-slate-50/80 dark:bg-slate-800/80 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+                    className="w-full pr-9 pl-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
 
-                {/* دکمه ایجاد فرآیند جدید */}
-                {isEditorOrManager && (
-                  <button
-                    onClick={() => setIsCreateModalOpen(true)}
-                    className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-xs font-bold transition shadow-md shadow-indigo-600/20 flex items-center justify-center gap-2 shrink-0"
-                  >
-                    <Plus className="w-4 h-4" />
-                    <span>ایجاد فرآیند جدید</span>
-                  </button>
-                )}
-              </div>
-
-              {/* نوار پایین: فیلتر وضعیت، ممیز و نحوه نمایش */}
-              <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
-                
-                {/* دکمه‌های وضعیت چرخه حیات */}
-                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full">
-                  <span className="text-xs font-bold text-slate-400 ml-1">وضعیت:</span>
-                  {[
-                    { id: 'ALL', label: 'همه' },
-                    { id: 'draft', label: 'پیش‌نویس' },
-                    { id: 'in_review', label: 'در حال بازبینی' },
-                    { id: 'approved', label: 'تایید شده' },
-                    { id: 'needs_revision', label: 'نیازمند اصلاح' }
-                  ].map(st => (
+                {/* دکمه‌های دکمه ساخت فرآیند جدید و تغییر حالت نمایش */}
+                <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                  
+                  {isEditorOrManager && (
                     <button
-                      key={st.id}
-                      onClick={() => setStatusFilter(st.id)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap ${
-                        statusFilter === st.id
-                          ? 'bg-indigo-600 text-white shadow-xs'
-                          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
-                      }`}
+                      onClick={() => setIsCreateModalOpen(true)}
+                      className="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition shadow-md shadow-indigo-600/20 flex items-center gap-1.5 shrink-0 cursor-pointer"
                     >
-                      {st.label}
+                      <Plus className="w-4 h-4" />
+                      <span>فرآیند جدید</span>
                     </button>
-                  ))}
-                </div>
+                  )}
 
-                {/* فیلتر ممیز و حالت نمایش */}
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-bold text-slate-400">ممیز:</span>
-                    <select
-                      value={reviewerFilter}
-                      onChange={(e) => setReviewerFilter(e.target.value)}
-                      className="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold rounded-xl px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                    >
-                      <option value="ALL">همه ممیزها</option>
-                      {users.map(u => (
-                        <option key={u.id} value={u.id}>{u.name}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* سوییچ حالت گرید / لیست */}
-                  <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700 shrink-0">
                     <button
                       onClick={() => setViewMode('grid')}
-                      className={`p-1.5 rounded-lg transition ${viewMode === 'grid' ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-xs' : 'text-slate-400'}`}
+                      className={`p-1.5 rounded-lg text-xs transition cursor-pointer ${
+                        viewMode === 'grid' 
+                          ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-xs font-bold' 
+                          : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                      }`}
                       title="نمایش شبکه‌ای"
                     >
                       <Grid className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => setViewMode('list')}
-                      className={`p-1.5 rounded-lg transition ${viewMode === 'list' ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-xs' : 'text-slate-400'}`}
+                      className={`p-1.5 rounded-lg text-xs transition cursor-pointer ${
+                        viewMode === 'list' 
+                          ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-xs font-bold' 
+                          : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                      }`}
                       title="نمایش لیستی"
                     >
                       <ListIcon className="w-4 h-4" />
                     </button>
                   </div>
+
                 </div>
 
               </div>
 
+              {/* نوار فیلترهای پیشرفته (چرخه حیات و ممیز) */}
+              <div className="flex items-center gap-3 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs overflow-x-auto pb-1">
+                <span className="flex items-center gap-1 font-semibold text-slate-500 dark:text-slate-400 shrink-0">
+                  <Filter className="w-3.5 h-3.5 text-indigo-500" />
+                  <span>فیلتر فرآیندها:</span>
+                </span>
+
+                {/* فیلتر وضعیت */}
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-lg px-2.5 py-1 font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer"
+                >
+                  <option value="ALL">همه وضعیت‌ها</option>
+                  <option value="draft">پیش‌نویس</option>
+                  <option value="in_review">در حال بازبینی</option>
+                  <option value="approved">تایید شده</option>
+                  <option value="needs_revision">نیازمند اصلاح</option>
+                </select>
+
+                {/* فیلتر ممیز */}
+                <select
+                  value={reviewerFilter}
+                  onChange={(e) => setReviewerFilter(e.target.value)}
+                  className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-lg px-2.5 py-1 font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer"
+                >
+                  <option value="ALL">همه ممیزها</option>
+                  {users.map(u => (
+                    <option key={u.id} value={u.id}>{u.name}</option>
+                  ))}
+                </select>
+              </div>
+
             </div>
 
-            {/* مسیر جاری (Breadcrumbs Bar) */}
-            <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 font-medium bg-white/60 dark:bg-slate-900/60 px-4 py-2 rounded-2xl border border-slate-200/60 dark:border-slate-800/60">
-              <FolderIcon className="w-4 h-4 text-indigo-500" />
+            {/* مسیر Breadcrumb پوشه انتخاب‌شده */}
+            <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900/60 px-4 py-2 rounded-xl border border-slate-200/80 dark:border-slate-800">
+              <FolderIcon className="w-3.5 h-3.5 text-amber-500 shrink-0" />
               {breadcrumbs.map((b, idx) => (
-                <React.Fragment key={b.id || 'root'}>
+                <React.Fragment key={idx}>
                   {idx > 0 && <span>/</span>}
                   <button
                     onClick={() => setSelectedFolderId(b.id)}
-                    className={`hover:underline font-bold ${selectedFolderId === b.id ? 'text-indigo-600 dark:text-indigo-400' : ''}`}
+                    className={`hover:text-indigo-600 dark:hover:text-indigo-400 transition cursor-pointer ${
+                      b.id === selectedFolderId ? 'font-extrabold text-slate-900 dark:text-white' : ''
+                    }`}
                   >
                     {b.name}
                   </button>
@@ -416,7 +429,7 @@ export const DiagramsDashboard: React.FC<DiagramsDashboardProps> = ({ theme, set
                 <Workflow className="w-12 h-12 text-slate-300 dark:text-slate-700 mx-auto" />
                 <h3 className="font-bold text-sm text-slate-800 dark:text-slate-200">هیچ فرآیندی یافت نشد</h3>
                 <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                  با معيارها و فیلترهای انتخاب‌شده فرآیندی پیدا نشد. فرآیند جدید ایجاد کنید یا فیلترها را بازنشانی کنید.
+                  با معیارهای انتخاب‌شده فرآیندی پیدا نشد. فرآیند جدید ایجاد کنید یا فیلترها را بازنشانی کنید.
                 </p>
               </div>
             ) : (
@@ -428,6 +441,9 @@ export const DiagramsDashboard: React.FC<DiagramsDashboardProps> = ({ theme, set
                     viewMode={viewMode}
                     onMoveClick={(d) => {
                       setMoveModalState({ isOpen: true, itemType: 'diagram', itemId: d.id, itemTitle: d.title });
+                    }}
+                    onEditClick={(d) => {
+                      setEditDiagramState({ isOpen: true, diagram: d });
                     }}
                   />
                 ))}
@@ -454,6 +470,12 @@ export const DiagramsDashboard: React.FC<DiagramsDashboardProps> = ({ theme, set
       <CreateDiagramModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
+      />
+
+      <EditDiagramModal
+        isOpen={editDiagramState.isOpen}
+        onClose={() => setEditDiagramState(prev => ({ ...prev, isOpen: false }))}
+        diagram={editDiagramState.diagram}
       />
 
       <MoveModal
