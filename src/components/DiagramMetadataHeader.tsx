@@ -7,6 +7,7 @@ import React, { useState } from 'react';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { DiagramStatus } from '../types';
 import { EditDiagramModal } from './EditDiagramModal';
+import { ShareModal } from './ShareModal';
 import { 
   ArrowRight, 
   Workflow, 
@@ -29,7 +30,9 @@ import {
   Link2,
   Globe,
   ChevronDown,
-  Edit3
+  Edit3,
+  Eye,
+  Shield
 } from 'lucide-react';
 
 interface DiagramMetadataHeaderProps {
@@ -80,6 +83,7 @@ export const DiagramMetadataHeader: React.FC<DiagramMetadataHeaderProps> = ({
   // Modal States
   const [isEditInfoOpen, setIsEditInfoOpen] = useState(false);
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [changeSummary, setChangeSummary] = useState('');
 
   // Share & Export Dropdown
@@ -392,7 +396,14 @@ export const DiagramMetadataHeader: React.FC<DiagramMetadataHeaderProps> = ({
               </button>
 
               {isExportOpen && (
-                <div className={`absolute ${isEn ? 'right-0' : 'left-0'} mt-2 w-52 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden z-50 p-1.5 space-y-1`}>
+                <div className={`absolute ${isEn ? 'right-0' : 'left-0'} mt-2 w-56 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden z-50 p-1.5 space-y-1`}>
+                  <button
+                    onClick={() => { setIsShareModalOpen(true); setIsExportOpen(false); }}
+                    className={`w-full ${isEn ? 'text-left' : 'text-right'} px-3 py-2 text-xs font-bold text-indigo-300 hover:bg-indigo-950/50 rounded-xl transition flex items-center gap-2 cursor-pointer border border-indigo-800/40`}
+                  >
+                    <Share2 className="w-4 h-4 text-indigo-400" />
+                    <span>تنظیمات اشتراک‌گذاری (Workspace Share)</span>
+                  </button>
                   <button
                     onClick={() => { handleCopyLink(); setIsExportOpen(false); }}
                     className={`w-full ${isEn ? 'text-left' : 'text-right'} px-3 py-2 text-xs text-slate-200 hover:bg-slate-800 rounded-xl transition flex items-center gap-2 cursor-pointer`}
@@ -546,6 +557,12 @@ export const DiagramMetadataHeader: React.FC<DiagramMetadataHeaderProps> = ({
           </div>
         </div>
       )}
+      {/* مدال اشتراک‌گذاری فرآیند */}
+      <ShareModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        diagram={activeDiagram}
+      />
     </>
   );
 };

@@ -1,13 +1,13 @@
 /**
  * @file CommentsDrawer.tsx
- * @description کشوی جانبی ثبت، مشاهده و حل و فصل نظرات و بازبینی‌های ارزیابان فرآیند
+ * @description کشوی جانبی ثبت و ارزیابی نظرات کلی و فرآیندی (Process-Level General Comments)
  * @architecture
- * - Single Responsibility Principle (SRP): مدیریت ثبت و حل و فصل نظرات روی دیاگرام فعال
+ * - Single Responsibility Principle (SRP): تفکیک نظرات کلی فرآیندی از کامنت‌های روی عناصر بوم
  */
 
 import React, { useState } from 'react';
 import { useWorkspace } from '../context/WorkspaceContext';
-import { MessageSquare, Send, CheckCircle2, X } from 'lucide-react';
+import { MessageSquare, Send, CheckCircle2, X, Info } from 'lucide-react';
 
 interface CommentsDrawerProps {
   isOpen: boolean;
@@ -15,12 +15,13 @@ interface CommentsDrawerProps {
 }
 
 export const CommentsDrawer: React.FC<CommentsDrawerProps> = ({ isOpen, onClose }) => {
-  const { activeDiagram, addCommentToDiagram, resolveComment } = useWorkspace();
+  const { activeDiagram, addCommentToDiagram, resolveComment, currentRole } = useWorkspace();
   const [commentText, setCommentText] = useState('');
 
   if (!isOpen || !activeDiagram) return null;
 
   const comments = activeDiagram.comments || [];
+  const canComment = currentRole === 'manager' || currentRole === 'editor' || currentRole === 'reviewer';
 
   const handleSendComment = (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,7 +32,7 @@ export const CommentsDrawer: React.FC<CommentsDrawerProps> = ({ isOpen, onClose 
 
   return (
     <>
-      {/* Backdrop overlay to prevent clipping behind canvas or toolbars */}
+      {/* Backdrop overlay */}
       <div 
         className="fixed inset-0 bg-slate-950/40 backdrop-blur-xs z-[9998] transition-opacity"
         onClick={onClose}
@@ -50,17 +51,25 @@ export const CommentsDrawer: React.FC<CommentsDrawerProps> = ({ isOpen, onClose 
               <MessageSquare className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="font-bold text-sm text-white">نظرات و ارزیابی فرآیند</h3>
+              <h3 className="font-bold text-sm text-white">نظرات و ارزیابی کلی فرآیند</h3>
               <p className="text-[11px] text-slate-400 font-mono">{comments.length} نظر ثبت شده</p>
             </div>
           </div>
           <button 
             onClick={onClose} 
-            className="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition"
+            className="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition cursor-pointer"
             title="بستن پنل نظرات"
           >
             <X className="w-5 h-5" />
           </button>
+        </div>
+
+        {/* Notice Banner for Reviewers */}
+        <div className="p-3 bg-indigo-50/80 dark:bg-indigo-950/50 border-b border-indigo-100 dark:border-indigo-900/50 flex items-start gap-2.5 text-[11px] text-indigo-900 dark:text-indigo-200">
+          <Info className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5" />
+          <p className="leading-relaxed">
+            <strong>راهنمای بازبینان:</strong> نظرات ثبت‌شده در این پنل مربوط به <strong>ارزیابی کلی فرآیند</strong> است. برای یادداشت‌های نقطه به نقطه روی المان‌های خاص، می‌توانید مستقیم روی عناصر بوم کامنت بگذارید.
+          </p>
         </div>
 
         {/* Comments List */}
@@ -68,9 +77,9 @@ export const CommentsDrawer: React.FC<CommentsDrawerProps> = ({ isOpen, onClose 
           {comments.length === 0 ? (
             <div className="text-center py-12 px-4 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/40 space-y-2">
               <MessageSquare className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto" />
-              <p className="font-bold text-xs text-slate-700 dark:text-slate-300">هنوز نظری ثبت نشده است</p>
+              <p className="font-bold text-xs text-slate-700 dark:text-slate-300">هنوز نظر کلی ثبت نشده است</p>
               <p className="text-[11px] text-slate-400 max-w-xs mx-auto">
-                بازبینی‌کنندگان و اعضای تیم می‌توانند ملاحظات و پیشنهادات اصلاحی خود را در این بخش ارسال کنند.
+                بازبینی‌کنندگان و اعضای تیم می‌توانند ملاحظات، استثنائات فرآیندی و پیشنهادات ارزیابی کلی خود را در این بخش ارسال کنند.
               </p>
             </div>
           ) : (
@@ -101,13 +110,15 @@ export const CommentsDrawer: React.FC<CommentsDrawerProps> = ({ isOpen, onClose 
                       <CheckCircle2 className="w-3.5 h-3.5" /> برطرف شده
                     </span>
                   ) : (
-                    <button
-                      onClick={() => resolveComment(activeDiagram.id, c.id)}
-                      className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1"
-                    >
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      <span>علامت‌گذاری به عنوان برطرف شده</span>
-                    </button>
+                    canComment && (
+                      <button
+                        onClick={() => resolveComment(activeDiagram.id, c.id)}
+                        className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 cursor-pointer"
+                      >
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>علامت‌گذاری به عنوان برطرف شده</span>
+                      </button>
+                    )
                   )}
                 </div>
               </div>
@@ -116,24 +127,30 @@ export const CommentsDrawer: React.FC<CommentsDrawerProps> = ({ isOpen, onClose 
         </div>
 
         {/* Input Form */}
-        <form onSubmit={handleSendComment} className="p-3.5 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-          <div className="flex items-center gap-2">
-            <input
-              type="text"
-              placeholder="ثبت نظر، استثنای فرآیندی یا ملاحظه بازبینی..."
-              value={commentText}
-              onChange={(e) => setCommentText(e.target.value)}
-              className="flex-1 px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
-            <button
-              type="submit"
-              className="p-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition shrink-0 shadow-md shadow-indigo-600/20"
-              title="ارسال نظر"
-            >
-              <Send className="w-4 h-4" />
-            </button>
+        {canComment ? (
+          <form onSubmit={handleSendComment} className="p-3.5 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                placeholder="ثبت نظر کلی، استثنای فرآیندی یا ملاحظه ارزیابی..."
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                className="flex-1 px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+              <button
+                type="submit"
+                className="p-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition shrink-0 shadow-md shadow-indigo-600/20 cursor-pointer"
+                title="ارسال نظر کلی"
+              >
+                <Send className="w-4 h-4" />
+              </button>
+            </div>
+          </form>
+        ) : (
+          <div className="p-3 text-center text-xs text-slate-400 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
+            شما با دسترسی فقط مشاهده وارد شده‌اید و امکان ثبت نظر ندارید.
           </div>
-        </form>
+        )}
       </div>
     </>
   );
