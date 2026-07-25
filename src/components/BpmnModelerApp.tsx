@@ -127,115 +127,179 @@ export default function BpmnModelerApp() {
   
   // Fix hardcoded titles (Token Simulation and Palette)
   useEffect(() => {
-    const observer = new MutationObserver(() => {
-      // Token Simulation Toggle
-      const toggleBtn = document.querySelector('.bts-toggle-mode');
-      if (toggleBtn) {
-        toggleBtn.setAttribute('title', lang === 'fa' ? 'شبیه‌سازی فرآیند' : 'Token Simulation');
+    let isUpdating = false;
+
+    const updateTitles = () => {
+      if (isUpdating) return;
+      isUpdating = true;
+      try {
+        // Token Simulation Toggle
+        const toggleBtn = document.querySelector('.bts-toggle-mode');
+        if (toggleBtn) {
+          const targetTitle = lang === 'fa' ? 'شبیه‌سازی فرآیند' : 'Token Simulation';
+          if (toggleBtn.getAttribute('title') !== targetTitle) {
+            toggleBtn.setAttribute('title', targetTitle);
+          }
+        }
+        
+        // Token Simulation Log header
+        const logHeader = document.querySelector('.bts-log .bts-header');
+        if (logHeader) {
+          // Find text node inside bts-header
+          for (const node of logHeader.childNodes) {
+            if (node.nodeType === Node.TEXT_NODE && node.nodeValue.trim()) {
+               const originalText = logHeader.getAttribute('data-original-text') || node.nodeValue.trim();
+               if (!logHeader.hasAttribute('data-original-text')) {
+                 logHeader.setAttribute('data-original-text', originalText);
+               }
+               const targetVal = lang === 'fa'
+                 ? (originalText === 'Simulation Log' ? ' تاریخچه شبیه‌سازی ' : node.nodeValue)
+                 : ' ' + originalText + ' ';
+               if (node.nodeValue !== targetVal) {
+                 node.nodeValue = targetVal;
+               }
+            }
+          }
+        }
+        
+        // Palette item titles
+        const paletteEntries = document.querySelectorAll('.djs-palette .entry');
+        paletteEntries.forEach(entry => {
+          const action = entry.getAttribute('data-action');
+          if (!action) return;
+          
+          let faTitle = "";
+          let enTitle = "";
+          
+          if (action === 'hand-tool') { faTitle = 'فعال کردن ابزار دست (کشیدن بوم)'; enTitle = 'Activate hand tool'; }
+          else if (action === 'lasso-tool') { faTitle = 'فعال کردن ابزار کمند (انتخاب چندتایی)'; enTitle = 'Activate lasso tool'; }
+          else if (action === 'space-tool') { faTitle = 'فعال کردن ابزار مدیریت فضا'; enTitle = 'Activate create/remove space tool'; }
+          else if (action === 'global-connect-tool') { faTitle = 'فعال کردن ابزار اتصال سراسری'; enTitle = 'Activate global connect tool'; }
+          else if (action === 'create.start-event') { faTitle = 'ایجاد رویداد شروع'; enTitle = 'Create StartEvent'; }
+          else if (action === 'create.end-event') { faTitle = 'ایجاد رویداد پایان'; enTitle = 'Create EndEvent'; }
+          else if (action === 'create.exclusive-gateway') { faTitle = 'ایجاد درگاه (Gateway)'; enTitle = 'Create Gateway'; }
+          else if (action === 'create.task') { faTitle = 'ایجاد وظیفه (Task)'; enTitle = 'Create Task'; }
+          else if (action === 'create.intermediate-event') { faTitle = 'ایجاد رویداد میانی یا مرزی'; enTitle = 'Create Intermediate/Boundary Event'; }
+          else if (action === 'create.data-object') { faTitle = 'ایجاد شیء داده'; enTitle = 'Create DataObjectReference'; }
+          else if (action === 'create.data-store') { faTitle = 'ایجاد پایگاه داده'; enTitle = 'Create DataStoreReference'; }
+          else if (action === 'create.participant-expanded') { faTitle = 'ایجاد استخر/مشارکت‌کننده'; enTitle = 'Create Pool/Participant'; }
+          else if (action === 'create.group') { faTitle = 'ایجاد گروه'; enTitle = 'Create Group'; }
+          else if (action === 'create.subprocess-expanded') { faTitle = 'ایجاد زیرفرآیند باز شده'; enTitle = 'Create expanded SubProcess'; }
+          else if (action === 'create') { faTitle = 'ایجاد عنصر'; enTitle = 'Create element'; }
+          
+          if (faTitle && enTitle) {
+            const targetTitle = lang === 'fa' ? faTitle : enTitle;
+            if (entry.getAttribute('title') !== targetTitle) {
+              entry.setAttribute('title', targetTitle);
+            }
+          }
+        });
+
+        // Ensure "Create element" tooltips match language
+        const allTitledEls = document.querySelectorAll('.djs-palette [title], .djs-popup [title], .djs-palette .entry');
+        allTitledEls.forEach(el => {
+          const t = el.getAttribute('title');
+          if (t === 'ایجاد عنصر' && lang === 'en') {
+            el.setAttribute('title', 'Create element');
+          } else if (t === 'Create element' && lang === 'fa') {
+            el.setAttribute('title', 'ایجاد عنصر');
+          }
+        });
+        
+        // Context Pad titles
+        const padEntries = document.querySelectorAll('.djs-context-pad .entry');
+        padEntries.forEach(entry => {
+          const action = entry.getAttribute('data-action');
+          if (!action) return;
+          
+          let faTitle = "";
+          let enTitle = "";
+          
+          if (action === 'append.text-annotation') { faTitle = 'افزودن یادداشت متنی'; enTitle = 'Append text annotation'; }
+          else if (action === 'append.end-event') { faTitle = 'افزودن رویداد پایان'; enTitle = 'Append EndEvent'; }
+          else if (action === 'append.gateway') { faTitle = 'افزودن درگاه'; enTitle = 'Append Gateway'; }
+          else if (action === 'append.task') { faTitle = 'افزودن وظیفه'; enTitle = 'Append Task'; }
+          else if (action === 'append.intermediate-event') { faTitle = 'افزودن رویداد میانی یا مرزی'; enTitle = 'Append Intermediate/Boundary Event'; }
+          else if (action === 'delete') { faTitle = 'حذف عنصر'; enTitle = 'Remove'; }
+          else if (action === 'replace') { faTitle = 'تغییر نوع عنصر'; enTitle = 'Change type'; }
+          else if (action === 'connect') { faTitle = 'اتصال با جریان متوالی یا پیام'; enTitle = 'Connect using Sequence/MessageFlow or Association'; }
+          
+          if (faTitle && enTitle) {
+            const targetTitle = lang === 'fa' ? faTitle : enTitle;
+            if (entry.getAttribute('title') !== targetTitle) {
+              entry.setAttribute('title', targetTitle);
+            }
+          }
+        });
+        
+        // Simulation Log Entries
+        const logTexts = document.querySelectorAll('.bts-log .bts-entry .bts-text');
+        logTexts.forEach(el => {
+          const originalText = (el.getAttribute('data-original-text') || el.textContent || "").trim();
+          if (!el.hasAttribute('data-original-text')) {
+            el.setAttribute('data-original-text', originalText);
+          }
+          
+          let newText = originalText;
+          if (lang === 'fa') {
+            if (originalText === "Process started") newText = "شروع فرآیند";
+            else if (originalText === "Process finished") newText = "پایان فرآیند";
+            else if (originalText === "Process entered") newText = "ورود به فرآیند";
+            else if (originalText === "Start Event") newText = "رویداد شروع";
+            else if (originalText === "End Event") newText = "رویداد پایان";
+            else if (originalText === "Task") newText = "وظیفه";
+            else if (originalText === "User Task") newText = "وظیفه کاربر";
+            else if (originalText === "Service Task") newText = "وظیفه سرویس";
+            else if (originalText === "Exclusive Gateway") newText = "درگاه انحصاری (XOR)";
+            else if (originalText === "Parallel Gateway") newText = "درگاه موازی (AND)";
+            else if (originalText === "Inclusive Gateway") newText = "درگاه جامع (OR)";
+          }
+          
+          if (el.textContent !== newText) {
+            el.textContent = newText;
+          }
+          if (el.getAttribute('title') !== newText) {
+            el.setAttribute('title', newText);
+          }
+        });
+        
+        const noEntries = document.querySelector('.bts-log .bts-entry.placeholder');
+        if (noEntries) {
+          const targetText = lang === 'fa' ? "هیچ موردی ثبت نشده است" : "No Entries";
+          if (noEntries.textContent !== targetText) {
+            noEntries.textContent = targetText;
+          }
+        }
+      } finally {
+        isUpdating = false;
       }
-      
-      // Token Simulation Log header
-      const logHeader = document.querySelector('.bts-log .header');
-      if (logHeader) {
-        if (lang === 'fa' && logHeader.textContent?.includes('Simulation Log')) {
-          logHeader.textContent = logHeader.textContent.replace('Simulation Log', 'تاریخچه شبیه‌سازی');
-        } else if (lang === 'en' && logHeader.textContent?.includes('تاریخچه شبیه‌سازی')) {
-          logHeader.textContent = logHeader.textContent.replace('تاریخچه شبیه‌سازی', 'Simulation Log');
-        }
+    };
+    
+    updateTitles();
+    
+    let observer: MutationObserver | null = null;
+    const safeObserve = () => {
+      if (observer && canvasContainerRef.current) {
+        observer.observe(canvasContainerRef.current, { childList: true, subtree: true });
       }
-      
-      // Palette item titles
-      const paletteEntries = document.querySelectorAll('.djs-palette .entry');
-      paletteEntries.forEach(entry => {
-        const action = entry.getAttribute('data-action');
-        if (!action) return;
-        
-        let faTitle = "";
-        let enTitle = "";
-        
-        if (action === 'hand-tool') { faTitle = 'فعال کردن ابزار دست (کشیدن بوم)'; enTitle = 'Activate hand tool'; }
-        else if (action === 'lasso-tool') { faTitle = 'فعال کردن ابزار کمند (انتخاب چندتایی)'; enTitle = 'Activate lasso tool'; }
-        else if (action === 'space-tool') { faTitle = 'فعال کردن ابزار مدیریت فضا'; enTitle = 'Activate create/remove space tool'; }
-        else if (action === 'global-connect-tool') { faTitle = 'فعال کردن ابزار اتصال سراسری'; enTitle = 'Activate global connect tool'; }
-        else if (action === 'create.start-event') { faTitle = 'ایجاد رویداد شروع'; enTitle = 'Create StartEvent'; }
-        else if (action === 'create.end-event') { faTitle = 'ایجاد رویداد پایان'; enTitle = 'Create EndEvent'; }
-        else if (action === 'create.exclusive-gateway') { faTitle = 'ایجاد درگاه (Gateway)'; enTitle = 'Create Gateway'; }
-        else if (action === 'create.task') { faTitle = 'ایجاد وظیفه (Task)'; enTitle = 'Create Task'; }
-        else if (action === 'create.intermediate-event') { faTitle = 'ایجاد رویداد میانی یا مرزی'; enTitle = 'Create Intermediate/Boundary Event'; }
-        else if (action === 'create.data-object') { faTitle = 'ایجاد شیء داده'; enTitle = 'Create DataObjectReference'; }
-        else if (action === 'create.data-store') { faTitle = 'ایجاد پایگاه داده'; enTitle = 'Create DataStoreReference'; }
-        else if (action === 'create.participant-expanded') { faTitle = 'ایجاد استخر/مشارکت‌کننده'; enTitle = 'Create Pool/Participant'; }
-        else if (action === 'create.group') { faTitle = 'ایجاد گروه'; enTitle = 'Create Group'; }
-        else if (action === 'create.subprocess-expanded') { faTitle = 'ایجاد زیرفرآیند باز شده'; enTitle = 'Create expanded SubProcess'; }
-        
-        if (faTitle && enTitle) {
-          entry.setAttribute('title', lang === 'fa' ? faTitle : enTitle);
-        }
-      });
-      
-      // Context Pad titles
-      const padEntries = document.querySelectorAll('.djs-context-pad .entry');
-      padEntries.forEach(entry => {
-        const action = entry.getAttribute('data-action');
-        if (!action) return;
-        
-        let faTitle = "";
-        let enTitle = "";
-        
-        if (action === 'append.text-annotation') { faTitle = 'افزودن یادداشت متنی'; enTitle = 'Append text annotation'; }
-        else if (action === 'append.end-event') { faTitle = 'افزودن رویداد پایان'; enTitle = 'Append EndEvent'; }
-        else if (action === 'append.gateway') { faTitle = 'افزودن درگاه'; enTitle = 'Append Gateway'; }
-        else if (action === 'append.task') { faTitle = 'افزودن وظیفه'; enTitle = 'Append Task'; }
-        else if (action === 'append.intermediate-event') { faTitle = 'افزودن رویداد میانی یا مرزی'; enTitle = 'Append Intermediate/Boundary Event'; }
-        else if (action === 'delete') { faTitle = 'حذف عنصر'; enTitle = 'Remove'; }
-        else if (action === 'replace') { faTitle = 'تغییر نوع عنصر'; enTitle = 'Change type'; }
-        else if (action === 'connect') { faTitle = 'اتصال با جریان متوالی یا پیام'; enTitle = 'Connect using Sequence/MessageFlow or Association'; }
-        
-        if (faTitle && enTitle) {
-          entry.setAttribute('title', lang === 'fa' ? faTitle : enTitle);
-        }
-      });
-      
-      // Simulation Log Entries
-      const logTexts = document.querySelectorAll('.bts-log-entry .text, .bts-log .entry .text, .bts-log .text');
-      logTexts.forEach(el => {
-        const originalText = (el.getAttribute('data-original-text') || el.textContent || "").trim();
-        if (!el.hasAttribute('data-original-text')) {
-          el.setAttribute('data-original-text', originalText);
-        }
-        
-        if (lang === 'fa') {
-          if (originalText === "Process started") el.textContent = "شروع فرآیند";
-          else if (originalText === "Process finished") el.textContent = "پایان فرآیند";
-          else if (originalText === "Process entered") el.textContent = "ورود به فرآیند";
-          else if (originalText === "Start Event") el.textContent = "رویداد شروع";
-          else if (originalText === "End Event") el.textContent = "رویداد پایان";
-          else if (originalText === "Task") el.textContent = "وظیفه";
-          else if (originalText === "User Task") el.textContent = "وظیفه کاربر";
-          else if (originalText === "Service Task") el.textContent = "وظیفه سرویس";
-          else if (originalText === "Exclusive Gateway") el.textContent = "درگاه انحصاری (XOR)";
-          else if (originalText === "Parallel Gateway") el.textContent = "درگاه موازی (AND)";
-          else if (originalText === "Inclusive Gateway") el.textContent = "درگاه جامع (OR)";
-          else el.textContent = originalText;
-        } else {
-          el.textContent = originalText;
-        }
-      });
+    };
+
+    observer = new MutationObserver(() => {
+      if (observer) observer.disconnect();
+      updateTitles();
+      safeObserve();
     });
-    if (canvasContainerRef.current) {
-      observer.observe(document.body, { childList: true, subtree: true, characterData: true });
-    }
-    return () => observer.disconnect();
+    
+    safeObserve();
+
+    return () => {
+      if (observer) observer.disconnect();
+    };
   }, [lang]);
 
   useEffect(() => {
     (window as any).__BPMN_LANG__ = lang;
     document.documentElement.dir = lang === 'fa' ? 'rtl' : 'ltr';
-    if (modelerRef.current) {
-      // Force re-render of canvas by recreating it or we can just trigger a save and re-import
-      // but it's simpler to just let the user know, or re-instantiate.
-      // Re-instantiating the modeler is safest for complete translation change.
-    }
   }, [lang]);
 
   useEffect(() => {
@@ -248,64 +312,37 @@ export default function BpmnModelerApp() {
 
   // Fetch all diagrams on mount
   const loadDiagramList = (selectIdAfterLoad?: string) => {
-    fetch("/api/diagrams")
-      .then((res) => res.json())
-      .then((data: DiagramListItem[]) => {
-        setDiagrams(data);
-        if (data.length > 0) {
-          const nextId = selectIdAfterLoad || data[0].id;
-          setSelectedId(nextId);
-        }
-      })
-      .catch((err) => console.error("Error loading diagrams:", err));
+    let list: DiagramListItem[] = [];
+    try {
+      list = JSON.parse(localStorage.getItem("bpmn-diagrams") || "[]");
+      if (!Array.isArray(list)) list = [];
+    } catch(e) {
+      list = [];
+    }
+    
+    if (list.length === 0) {
+      const initial: DiagramListItem = { id: "demo-process", name: "فرآیند نمونه خرید سازمانی", nameEn: "Demo Procurement Process", updatedAt: new Date().toISOString(), createdAt: new Date().toISOString(), latestVersion: 1 };
+      localStorage.setItem("bpmn-diagrams", JSON.stringify([initial]));
+      setDiagrams([initial]);
+      if (!localStorage.getItem(`bpmn-diagram-demo-process`)) {
+         localStorage.setItem(`bpmn-diagram-demo-process`, JSON.stringify({
+            id: "demo-process",
+            name: "فرآیند نمونه خرید سازمانی",
+            nameEn: "Demo Procurement Process",
+            xml: `<?xml version="1.0" encoding="UTF-8"?><bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn"><bpmn:process id="Process_1" isExecutable="false"><bpmn:startEvent id="StartEvent_1" /></bpmn:process><bpmndi:BPMNDiagram id="BPMNDiagram_1"><bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_1"><bpmndi:BPMNShape id="_BPMNShape_StartEvent_2" bpmnElement="StartEvent_1"><dc:Bounds x="152" y="102" width="36" height="36" /></bpmndi:BPMNShape></bpmndi:BPMNPlane></bpmndi:BPMNDiagram></bpmn:definitions>`,
+            updatedAt: new Date().toISOString()
+         }));
+      }
+    } else {
+      setDiagrams(list);
+    }
+    if (selectIdAfterLoad) setSelectedId(selectIdAfterLoad);
   };
 
   useEffect(() => {
+    if (!canvasContainerRef.current) return;
     loadDiagramList();
-  }, []);
 
-  // Fetch and load selected diagram
-  useEffect(() => {
-    if (!selectedId) return;
-
-    fetch(`/api/diagrams/${selectedId}`)
-      .then((res) => res.json())
-      .then((data: Diagram) => {
-        setCurrentDiagram(data);
-        setDiagramName(data.name);
-          setDiagramNameEn(data.nameEn || data.name);
-
-        // Check for local storage drafts first!
-        const localDraft = localStorage.getItem(`bpmn-draft-${selectedId}`);
-        const xmlToLoad = localDraft || data.xml;
-
-        if (modelerRef.current) {
-          modelerRef.current.importXML(xmlToLoad)
-            .then(() => {
-              const canvas = modelerRef.current?.get("canvas");
-              if (canvas) {
-                setTimeout(() => canvas.zoom("fit-viewport", "auto"), 100);
-              }
-            })
-            .catch((err) => {
-              console.error("Error loading XML into modeler:", err);
-              modelerRef.current?.importXML(data.xml).then(() => {
-                const canvas = modelerRef.current?.get("canvas");
-                if (canvas) {
-                  setTimeout(() => canvas.zoom("fit-viewport", "auto"), 100);
-                }
-              });
-            });
-        }
-      })
-      .catch((err) => console.error("Error fetching diagram:", err));
-  }, [selectedId]);
-
-  // Initialize Modeler
-  useEffect(() => {
-    if (!canvasContainerRef.current || !propertiesPanelRef.current) return;
-
-    // Destroy existing modeler
     if (modelerRef.current) {
       modelerRef.current.destroy();
     }
@@ -315,93 +352,108 @@ export default function BpmnModelerApp() {
       propertiesPanel: {
         parent: propertiesPanelRef.current
       },
-      minimap: {
-        open: false
-      },
       additionalModules: [
         BpmnPropertiesPanelModule,
         BpmnPropertiesProviderModule,
         minimapModule,
         colorPickerModule,
         tokenSimulationModule,
-        CreateAppendAnythingModule,
         lintModule,
+        CreateAppendAnythingModule,
         customTranslateModule,
-        customContextPadModule,
-        { __init__: ["customContextPad"], customContextPad: ["type", CustomContextPadProvider] }
+        customContextPadModule
       ],
       linting: {
-        bpmnlint: packedBpmnlintConfig,
-        active: true
+        bpmnlint: packedBpmnlintConfig
       }
     });
 
     modelerRef.current = modeler;
-    modeler.on("linting.completed", (event: any) => {
-      const issuesObj = event.issues || {};
-      const newIssues: any[] = [];
-      for (const elementId in issuesObj) {
-        issuesObj[elementId].forEach((issue: any) => {
-          newIssues.push({
-            elementId,
-            message: issue.message,
-            category: issue.category
-          });
-        });
-      }
-      setLintIssues(newIssues);
-    });
 
-
-    // Open first default diagram if not yet done
-    if (currentDiagram) {
-      const draft = localStorage.getItem(`bpmn-draft-${currentDiagram.id}`);
-      modeler.importXML(draft || currentDiagram.xml).then(() => {
-        const canvas = modeler.get("canvas") as any;
-        if (canvas) {
-          setTimeout(() => canvas.zoom("fit-viewport", "auto"), 250);
-        }
-        try {
-          const minimap = modeler.get("minimap") as any;
-          if (minimap) minimap.close();
-        } catch (e) { }
-      });
+    const data = localStorage.getItem(`bpmn-diagram-${selectedId}`);
+    if (data) {
+       try {
+         const diagram = JSON.parse(data) as Diagram;
+         if (diagram) {
+           if (!Array.isArray(diagram.versions)) {
+             diagram.versions = diagram.xml ? [{
+               version: diagram.latestVersion || 1,
+               xml: diagram.xml,
+               timestamp: diagram.updatedAt || new Date().toISOString(),
+               editorName: "سیستم",
+               editorNameEn: "System"
+             }] : [];
+           }
+           setCurrentDiagram(diagram);
+           setDiagramName(diagram.name || "");
+           setDiagramNameEn(diagram.nameEn || "");
+           if (diagram.xml) {
+             modeler.importXML(diagram.xml).then(() => {
+                const canvas = modeler.get('canvas') as any;
+                canvas?.zoom?.('fit-viewport');
+                const linting = modeler.get('linting') as any;
+                if (linting) {
+                  if (typeof linting.activateLinting === 'function') {
+                    linting.activateLinting();
+                  } else if (typeof linting.toggle === 'function') {
+                    linting.toggle(true);
+                  } else if (typeof linting.activate === 'function') {
+                    linting.activate();
+                  }
+                }
+             }).catch(console.error);
+           }
+         }
+       } catch (e) {
+         console.error("Corrupted diagram data", e);
+       }
     }
 
-    // CommandStack changes (Undo/Redo, Autosave)
     const onCommandStackChanged = () => {
-      if (!modelerRef.current || !currentDiagram) return;
-
       setIsSavingDraft(true);
-      modelerRef.current.saveXML({ format: true }).then(({ xml }) => {
-        if (xml) {
-          localStorage.setItem(`bpmn-draft-${currentDiagram.id}`, xml);
-          setTimeout(() => setIsSavingDraft(false), 800);
-        }
-      });
+      setTimeout(() => setIsSavingDraft(false), 500);
+    };
+
+    const onElementChanged = (e: any) => {
+      // noop
     };
 
     modeler.on("commandStack.changed", onCommandStackChanged);
-    
-    // Sync Process name changes from canvas/properties panel to our input
-    const onElementChanged = (e: any) => {
-      if (e.element && e.element.type === "bpmn:Process") {
-        const newName = e.element.businessObject?.name;
-        if (newName) {
-          setDiagramName(prev => prev !== newName ? newName : prev);
-        }
-      }
-    };
     modeler.on("element.changed", onElementChanged);
+    
+    const eventBus = modeler.get('eventBus') as any;
 
-    (modeler.get('eventBus') as any).on('selection.changed', (e: any) => {
-      if (e.newSelection && e.newSelection.length > 0) {
-        setSelectedElementId(e.newSelection[0].id);
-      } else {
-        setSelectedElementId(null);
+    const handleLintingCompleted = (event: any) => {
+      const issuesMap = event.issues || {};
+      const flatIssues: any[] = [];
+      
+      Object.keys(issuesMap).forEach((elementId) => {
+        const list = issuesMap[elementId];
+        if (Array.isArray(list)) {
+          list.forEach((issue: any) => {
+            flatIssues.push({
+              elementId,
+              id: issue.id || elementId,
+              message: issue.message || issue.rule || '',
+              rule: issue.rule,
+              category: issue.category || 'error'
+            });
+          });
+        }
+      });
+      
+      setLintIssues(flatIssues);
+    };
+
+    eventBus.on('linting.completed', handleLintingCompleted);
+
+    setTimeout(() => {
+      const linting = modeler.get('linting') as any;
+      if (linting && typeof linting.toggle === 'function') {
+        linting.toggle(true);
       }
-    });
-
+    }, 300);
+    
     (modeler.get('eventBus') as any).on('comments.open', (e: any) => {
       setIsPropertiesOpen(true);
       setActiveRightTab("comments");
@@ -417,32 +469,56 @@ export default function BpmnModelerApp() {
       setSelectedElementId(e.element.id);
     });
 
-    // Custom BPMNLint overlay modifier using MutationObserver for bulletproof updates
-    const observer = new MutationObserver((mutations) => {
-      const overlays = document.querySelectorAll('.bjsl-overlay');
-      overlays.forEach(overlay => {
-        const issuesList = overlay.querySelectorAll('.bjsl-issues li');
-        if (issuesList.length > 0) {
-          const icon = overlay.querySelector('.bjsl-icon') as HTMLElement;
-          if (icon && !icon.dataset.modified) {
-            icon.dataset.modified = "true";
-            const isError = overlay.querySelector('.bjsl-icon-error');
-            const color = isError ? "var(--color-red-360-100-40)" : "#f7c71a";
-            icon.innerHTML = `<span style="font-size:12px; font-weight:bold; font-family:sans-serif;">${issuesList.length}</span>`;
+    let lintObserver: MutationObserver | null = null;
+
+    const safeObserveLint = () => {
+      if (lintObserver && canvasContainerRef.current) {
+        lintObserver.observe(canvasContainerRef.current, { childList: true, subtree: true });
+      }
+    };
+
+    const updateLintOverlays = () => {
+      const issueElements = document.querySelectorAll('.bjsl-issues li, .bjsl-dropdown li, .bjsl-issues .message, .bjsl-issue');
+      issueElements.forEach(el => {
+        const textNode = el.childNodes[0];
+        if (textNode && textNode.nodeType === Node.TEXT_NODE) {
+          const originalText = el.getAttribute('data-original-text') || textNode.nodeValue || "";
+          if (!el.hasAttribute('data-original-text')) {
+            el.setAttribute('data-original-text', originalText);
+          }
+          const targetVal = lang === 'fa' ? customTranslate(originalText) : originalText;
+          if (textNode.nodeValue !== targetVal) {
+            textNode.nodeValue = targetVal;
           }
         }
       });
-    });
-    
-    if (canvasContainerRef.current) {
-      observer.observe(canvasContainerRef.current, { childList: true, subtree: true });
-    }
 
+      const headings = document.querySelectorAll('.bjsl-issue-heading, .bjsl-header');
+      headings.forEach(el => {
+        const orig = el.getAttribute('data-original-text') || el.textContent || "";
+        if (!el.hasAttribute('data-original-text')) {
+          el.setAttribute('data-original-text', orig);
+        }
+        const targetVal = lang === 'fa' ? 'خطاها و آراستگی فرآیند' : orig;
+        if (el.textContent !== targetVal) {
+          el.textContent = targetVal;
+        }
+      });
+    };
+
+    lintObserver = new MutationObserver(() => {
+      if (lintObserver) lintObserver.disconnect();
+      updateLintOverlays();
+      safeObserveLint();
+    });
+
+    safeObserveLint();
 
     return () => {
       modeler.off("commandStack.changed", onCommandStackChanged);
       modeler.off("element.changed", onElementChanged);
-      observer.disconnect();
+      eventBus.off('linting.completed', handleLintingCompleted);
+      if (lintObserver) lintObserver.disconnect();
       modeler.destroy();
       modelerRef.current = null;
     };
@@ -866,14 +942,15 @@ export default function BpmnModelerApp() {
   };
 
   const handleCompareWithPrevious = async () => {
-    if (!currentDiagram || currentDiagram.versions.length < 2) {
+    const versions = currentDiagram?.versions || [];
+    if (!currentDiagram || versions.length < 2) {
       alert(t("diffRequiresTwoVersions", lang));
       return;
     }
     
     try {
       const currentXml = await modelerRef.current!.saveXML({ format: true });
-      const previousVersion = currentDiagram.versions[1]; 
+      const previousVersion = versions[1]; 
       
       setDiffingXmls({
         oldXml: previousVersion.xml,
@@ -994,7 +1071,7 @@ export default function BpmnModelerApp() {
           </button>
 
           {/* Compare Button */}
-          {currentDiagram && currentDiagram.versions.length >= 2 && (
+          {currentDiagram && (currentDiagram.versions || []).length >= 2 && (
             <button
               onClick={handleCompareWithPrevious}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition relative cursor-pointer text-xs font-semibold ${diffingXmls ? "bg-amber-100 border-amber-300 text-amber-700 dark:bg-amber-900/40 dark:border-amber-700 dark:text-amber-400" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"}`}
@@ -1118,7 +1195,7 @@ export default function BpmnModelerApp() {
             </p>
 
             <div className="flex-1 overflow-y-auto space-y-2 pr-1" id="versions-list">
-              {currentDiagram.versions.slice().reverse().map((v) => (
+              {(currentDiagram?.versions || []).slice().reverse().map((v) => (
                 <div
                   key={v.version}
                   onClick={() => handleLoadVersion(v)}
@@ -1158,8 +1235,8 @@ export default function BpmnModelerApp() {
 
         {/* Core Canvas stage container */}
         <div className="flex-1 relative h-full flex flex-col overflow-hidden" id="canvas-wrapper">
-          {/* Zoom Controls */}
-          <div className={`absolute bottom-24 left-6 flex flex-col gap-1 rounded-lg shadow border border-slate-200 dark:border-slate-700 p-1 z-10 ${theme === "dark" ? "bg-slate-800" : "bg-white"}`}>
+          {/* Zoom Controls placed on OPPOSITE side of element palette */}
+          <div className={`absolute bottom-24 ${lang === 'fa' ? 'left-6' : 'right-6'} flex flex-col gap-1 rounded-lg shadow border border-slate-200 dark:border-slate-700 p-1 z-10 ${theme === "dark" ? "bg-slate-800" : "bg-white"}`}>
             <button onClick={handleFitViewport} className="p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md" title={t("fitViewport", lang)}>
               <Focus className="w-5 h-5" />
             </button>
@@ -1176,47 +1253,63 @@ export default function BpmnModelerApp() {
 
           
           
-          {/* Custom Lint Panel */}
-          {lintIssues.length > 0 && (
-            <div className={`border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1e293b] flex flex-col z-20 shrink-0 transition-all duration-300 ${isLintPanelOpen ? 'h-[200px]' : 'h-8'}`}>
-              <div 
-                className="px-4 py-1.5 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-600 dark:text-slate-300 flex items-center justify-between cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition"
-                onClick={() => setIsLintPanelOpen(!isLintPanelOpen)}
-              >
-                <div className="flex items-center gap-2">
-                  <span className="text-red-500">⚠️</span>
-                  {lintIssues.length} {t("issuesFound", lang)}
-                </div>
-                <ChevronDown className={`w-4 h-4 transition-transform ${!isLintPanelOpen ? 'rotate-180' : ''}`} />
+          {/* Custom Lint Panel Bar */}
+          <div className={`border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-[#1e293b] flex flex-col z-20 shrink-0 transition-all duration-300 ${isLintPanelOpen && lintIssues.length > 0 ? 'h-[200px]' : 'h-8'}`}>
+            <div 
+              className="px-4 py-1.5 bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-600 dark:text-slate-300 flex items-center justify-between cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition select-none"
+              onClick={() => {
+                if (lintIssues.length > 0) {
+                  setIsLintPanelOpen(!isLintPanelOpen);
+                }
+              }}
+              dir={lang === "fa" ? "rtl" : "ltr"}
+            >
+              <div className="flex items-center gap-2">
+                {lintIssues.length > 0 ? (
+                  <>
+                    <span className="text-amber-500 font-bold">⚠️</span>
+                    <span className="text-amber-700 dark:text-amber-400 font-semibold">
+                      {lintIssues.length} {t("issuesFound", lang)}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-emerald-500 font-bold">✓</span>
+                    <span className="text-emerald-700 dark:text-emerald-400 font-medium">
+                      {lang === 'fa' ? 'وضعیت اعتبارسنجی: نمودار بدون خطا است' : 'Diagram Validation: No issues found'}
+                    </span>
+                  </>
+                )}
               </div>
-              {isLintPanelOpen && (
-                <div className="overflow-y-auto p-2 flex-1">
-                  {lintIssues.map((issue, idx) => (
-                    <div 
-                      key={idx}
-                      onClick={() => {
-                        if (modelerRef.current) {
-                          const elementRegistry = modelerRef.current.get('elementRegistry') as any;
-                          const element = elementRegistry.get(issue.elementId);
-                          if (element) {
-                            const selection = modelerRef.current.get('selection') as any;
-                            selection.select(element);
-                            const canvas = modelerRef.current.get('canvas') as any;
-                            canvas.zoom('fit-viewport');
-                          }
-                        }
-                      }}
-                      className="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer border border-rose-200 dark:border-rose-900/50 bg-rose-50/50 dark:bg-rose-900/20 mb-1 rounded text-start transition"
-                      dir={lang === "fa" ? "rtl" : "ltr"}
-                    >
-                      <span className="text-rose-500 flex-shrink-0 text-xs">⚠️</span>
-                      <span className="text-sm text-slate-700 dark:text-slate-300 flex-1">{customTranslate(issue.message)}</span>
-                    </div>
-                  ))}
-                </div>
+              {lintIssues.length > 0 && (
+                <ChevronDown className={`w-4 h-4 text-slate-500 transition-transform ${!isLintPanelOpen ? 'rotate-180' : ''}`} />
               )}
             </div>
-          )}
+            {isLintPanelOpen && lintIssues.length > 0 && (
+              <div className="overflow-y-auto p-2 flex-1 space-y-1">
+                {lintIssues.map((issue, idx) => (
+                  <div 
+                    key={idx}
+                    onClick={() => {
+                      if (modelerRef.current) {
+                        const elementRegistry = modelerRef.current.get('elementRegistry') as any;
+                        const element = elementRegistry.get(issue.elementId);
+                        if (element) {
+                          const selection = modelerRef.current.get('selection') as any;
+                          selection.select(element);
+                        }
+                      }
+                    }}
+                    className="flex items-center gap-2 px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800/80 cursor-pointer border border-rose-200 dark:border-rose-900/50 bg-rose-50/50 dark:bg-rose-900/20 rounded text-start transition"
+                    dir={lang === "fa" ? "rtl" : "ltr"}
+                  >
+                    <span className="text-rose-500 flex-shrink-0 text-xs">⚠️</span>
+                    <span className="text-xs text-slate-700 dark:text-slate-300 flex-1 font-medium">{customTranslate(issue.message)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* 3. Right Sidebar Properties Panel (Collapsible) */}
