@@ -1,3 +1,10 @@
+/**
+ * @file DiffModal.tsx
+ * @description پنجره مقایسه بصری و متنی دو نسخه مختلف فرآیند (Diagram Visual Diff)
+ * @architecture
+ * - Single Responsibility Principle (SRP): محاسبه تغییرات XML و هایلایت بصری المان‌های افزوده‌شده، حذف‌شده یا تغییریافته
+ */
+
 import React, { useEffect, useRef, useState } from 'react';
 import { t } from '../lib/i18n';
 import BpmnViewer from 'bpmn-js/lib/NavigatedViewer';

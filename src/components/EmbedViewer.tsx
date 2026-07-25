@@ -1,3 +1,10 @@
+/**
+ * @file EmbedViewer.tsx
+ * @description نمایشگر تعبیه‌شده و اشتراک‌گذاری عمومی فرآیند برای قرارگیری در وب‌سایت‌ها یا آدرس‌های عمومی (/view/processId)
+ * @architecture
+ * - Single Responsibility Principle (SRP): رندر سبک‌وزن فقط‌خواندنی دیاگرام BPMN همراه با کنترل‌های زوم و حرکت
+ */
+
 import React, { useEffect, useRef, useState } from "react";
 import BpmnViewer from "bpmn-js/lib/NavigatedViewer";
 

@@ -1,3 +1,11 @@
+/**
+ * @file BpmnModelerApp.tsx
+ * @description کامپوننت بوم اصلی مدلسازی BPMN 2.0، ابزارهای طراحی، شبیه‌سازی توکن، ممیزی هوشمند، خروجی‌های چندگانه و همکاری گروهی
+ * @architecture
+ * - Single Responsibility Principle (SRP): مدیریت چرخه حیات بوم bpmn-js، تعامل با ابزارها و خروجی‌های استاندارد
+ * - Dependency Inversion Principle (DIP): اتکا به WorkspaceContext جهت همگام‌سازی نسخه‌ها، نظرات و وضعیت‌های فرآیند
+ */
+
 import React, { useEffect, useRef, useState } from "react";
 import { t, formatDateTime } from "../lib/i18n";
 import BpmnModeler from "bpmn-js/lib/Modeler";
@@ -27,6 +35,11 @@ import "bpmn-js-token-simulation/assets/css/bpmn-js-token-simulation.css";
 // Export and PDF engines
 import { jsPDF } from "jspdf";
 import { svg2pdf } from "svg2pdf.js";
+
+import { useWorkspace } from "../context/WorkspaceContext";
+import { DiagramMetadataHeader } from "./DiagramMetadataHeader";
+import { VersionHistoryDrawer } from "./VersionHistoryDrawer";
+import { CommentsDrawer } from "./CommentsDrawer";
 
 // Lucide icons
 import {
@@ -61,7 +74,13 @@ import {
   MessageSquare
 , FilePlus, Upload, Link2, Image, ChevronDown, Globe, Reply, Workflow } from "lucide-react";
 
-export default function BpmnModelerApp() {
+export default function BpmnModelerApp({ theme: propsTheme, setTheme: propsSetTheme }: { theme?: "light" | "dark"; setTheme?: (theme: "light" | "dark") => void }) {
+  const workspace = useWorkspace();
+  const activeDiagram = workspace?.activeDiagram;
+
+  const [isHistoryDrawerOpen, setIsHistoryDrawerOpen] = useState(false);
+  const [isCommentsDrawerOpen, setIsCommentsDrawerOpen] = useState(false);
+
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const propertiesPanelRef = useRef<HTMLDivElement>(null);
   const modelerRef = useRef<BpmnModeler | null>(null);
@@ -74,7 +93,9 @@ export default function BpmnModelerApp() {
   const [isLintPanelOpen, setIsLintPanelOpen] = useState(true);
 
   // Form states
-  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [localTheme, setLocalTheme] = useState<"light" | "dark">("light");
+  const theme = propsTheme || localTheme;
+  const setTheme = propsSetTheme || setLocalTheme;
   const [lang, setLang] = useState<"fa" | "en">("fa");
   const [diagramName, setDiagramName] = useState<string>("");
   const [diagramNameEn, setDiagramNameEn] = useState<string>("");
@@ -385,14 +406,14 @@ export default function BpmnModelerApp() {
     }
     
     if (list.length === 0) {
-      const initial: DiagramListItem = { id: "demo-process", name: "فرآیند نمونه خرید سازمانی", nameEn: "Demo Procurement Process", updatedAt: new Date().toISOString(), createdAt: new Date().toISOString(), latestVersion: 1 };
+      const initial: any = { id: "demo-process", title: "فرآیند نمونه خرید سازمانی", titleEn: "Demo Procurement Process", updatedAt: new Date().toISOString(), createdAt: new Date().toISOString(), latestVersion: 1 };
       localStorage.setItem("bpmn-diagrams", JSON.stringify([initial]));
       setDiagrams([initial]);
       if (!localStorage.getItem(`bpmn-diagram-demo-process`)) {
          localStorage.setItem(`bpmn-diagram-demo-process`, JSON.stringify({
             id: "demo-process",
-            name: "فرآیند نمونه خرید سازمانی",
-            nameEn: "Demo Procurement Process",
+            title: "فرآیند نمونه خرید سازمانی",
+            titleEn: "Demo Procurement Process",
             xml: `<?xml version="1.0" encoding="UTF-8"?><bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn"><bpmn:process id="Process_1" isExecutable="false"><bpmn:startEvent id="StartEvent_1" /></bpmn:process><bpmndi:BPMNDiagram id="BPMNDiagram_1"><bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_1"><bpmndi:BPMNShape id="_BPMNShape_StartEvent_2" bpmnElement="StartEvent_1"><dc:Bounds x="152" y="102" width="36" height="36" /></bpmndi:BPMNShape></bpmndi:BPMNPlane></bpmndi:BPMNDiagram></bpmn:definitions>`,
             updatedAt: new Date().toISOString()
          }));
@@ -434,43 +455,65 @@ export default function BpmnModelerApp() {
 
     modelerRef.current = modeler;
 
-    const data = localStorage.getItem(`bpmn-diagram-${selectedId}`);
-    if (data) {
-       try {
-         const diagram = JSON.parse(data) as Diagram;
-         if (diagram) {
-           if (!Array.isArray(diagram.versions)) {
-             diagram.versions = diagram.xml ? [{
-               version: diagram.latestVersion || 1,
-               xml: diagram.xml,
-               timestamp: diagram.updatedAt || new Date().toISOString(),
-               editorName: "سیستم",
-               editorNameEn: "System"
-             }] : [];
-           }
-           setCurrentDiagram(diagram);
-           setDiagramName(diagram.name || "");
-           setDiagramNameEn(diagram.nameEn || "");
-           if (diagram.xml) {
-             modeler.importXML(diagram.xml).then(() => {
-                const canvas = modeler.get('canvas') as any;
-                canvas?.zoom?.('fit-viewport');
-                const linting = modeler.get('linting') as any;
-                if (linting) {
-                  if (typeof linting.activateLinting === 'function') {
-                    linting.activateLinting();
-                  } else if (typeof linting.toggle === 'function') {
-                    linting.toggle(true);
-                  } else if (typeof linting.activate === 'function') {
-                    linting.activate();
+    const targetXml = activeDiagram ? activeDiagram.xml : null;
+    const targetTitle = activeDiagram ? activeDiagram.title : null;
+    const targetTitleEn = activeDiagram ? activeDiagram.titleEn : null;
+
+    if (activeDiagram && targetXml) {
+      setDiagramName(targetTitle || "");
+      setDiagramNameEn(targetTitleEn || "");
+      modeler.importXML(targetXml).then(() => {
+        const canvas = modeler.get('canvas') as any;
+        canvas?.zoom?.('fit-viewport');
+        const linting = modeler.get('linting') as any;
+        if (linting) {
+          if (typeof linting.activateLinting === 'function') {
+            linting.activateLinting();
+          } else if (typeof linting.toggle === 'function') {
+            linting.toggle(true);
+          } else if (typeof linting.activate === 'function') {
+            linting.activate();
+          }
+        }
+      }).catch(console.error);
+    } else {
+      const data = localStorage.getItem(`bpmn-diagram-${selectedId}`);
+      if (data) {
+         try {
+           const diagram = JSON.parse(data) as any;
+           if (diagram) {
+             if (!Array.isArray(diagram.versions)) {
+               diagram.versions = diagram.xml ? [{
+                 version: diagram.latestVersion || 1,
+                 xml: diagram.xml,
+                 timestamp: diagram.updatedAt || new Date().toISOString(),
+                 editorName: "سیستم"
+               }] : [];
+             }
+             setCurrentDiagram(diagram);
+             setDiagramName(diagram.title || diagram.name || "");
+             setDiagramNameEn(diagram.titleEn || diagram.nameEn || "");
+             if (diagram.xml) {
+               modeler.importXML(diagram.xml).then(() => {
+                  const canvas = modeler.get('canvas') as any;
+                  canvas?.zoom?.('fit-viewport');
+                  const linting = modeler.get('linting') as any;
+                  if (linting) {
+                    if (typeof linting.activateLinting === 'function') {
+                      linting.activateLinting();
+                    } else if (typeof linting.toggle === 'function') {
+                      linting.toggle(true);
+                    } else if (typeof linting.activate === 'function') {
+                      linting.activate();
+                    }
                   }
-                }
-             }).catch(console.error);
+               }).catch(console.error);
+             }
            }
+         } catch (e) {
+           console.error("Corrupted diagram data", e);
          }
-       } catch (e) {
-         console.error("Corrupted diagram data", e);
-       }
+      }
     }
 
     const onCommandStackChanged = () => {
@@ -1077,194 +1120,42 @@ export default function BpmnModelerApp() {
 
   return (
     <div className={`flex flex-col h-screen overflow-hidden text-slate-800 dark:text-slate-200 ${theme === "dark" ? "dark dark-theme bg-[#0f172a]" : "bg-slate-50"}`} dir={lang === "fa" ? "rtl" : "ltr"} id="bpmn-app-container">
-      {/* 1. Header Toolbar */}
-      <header className="flex flex-wrap items-center justify-between gap-4 px-5 py-2.5 bg-white dark:bg-[#1e293b] border-b border-slate-200 dark:border-slate-800 shadow-sm z-50 relative" id="app-header">
-        <div className="flex items-center gap-4">
-          {/* Main Logo & Title */}
-          <div className="flex items-center gap-2">
-<div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white shrink-0 shadow-sm"><Workflow className="w-5 h-5" /></div>
-            <div>
-              <h1 className="font-bold text-sm tracking-tight text-slate-900 dark:text-white">{t("app.title", lang)}</h1>
-              <p className="text-[10px] text-slate-400 dark:text-slate-400 font-medium leading-none mt-0.5">{t("app.subtitle", lang)}</p>
-            </div>
-          </div>
-
-          <div className="h-8 w-px bg-slate-200 dark:bg-slate-700 hidden sm:block" />
-
-          {/* Process Selector */}
-          <div className="flex items-center gap-2">
-            <label className="text-xs font-semibold text-slate-400 dark:text-slate-400 hidden md:block">{t("activeProcess", lang)}</label>
-            <select
-              value={selectedId}
-              onChange={(e) => setSelectedId(e.target.value)}
-              className="px-3 py-1.5 text-xs font-medium bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:border-blue-500 text-slate-800 dark:text-slate-200"
-              id="process-select-dropdown"
-            >
-              {diagrams.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {lang === 'fa' ? d.name : (d.nameEn || d.name)} ({t("latestVersion", lang)} {d.latestVersion})
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Create Process Trigger */}
-          <button
-            onClick={() => setShowNewModal(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-bold transition shadow-sm cursor-pointer"
-            id="create-new-process-btn"
-          >
-            <Plus className="w-4 h-4" />
-            <span>{t("newProcess", lang)}</span>
-          </button>
-        </div>
-
-        {/* Action controls */}
-        <div className="flex items-center gap-2.5 flex-wrap">
-          {/* Current Process Name Input */}
-          <input
-            type="text"
-            value={lang === 'fa' ? diagramName : diagramNameEn}
-            onChange={(e) => {
-              if (lang === 'fa') setDiagramName(e.target.value);
-              else setDiagramNameEn(e.target.value);
-            }}
-            placeholder={t("processNamePlaceholder", lang)}
-            className="px-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:border-blue-500 w-44 lg:w-56 font-semibold"
-            id="diagram-name-input"
-          />
-
-          {/* Active Editor Name */}
-          <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-900 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700">
-            <User className="w-4 h-4 text-slate-400" />
-            <input
-              type="text"
-              value={editorName}
-              onChange={(e) => {
-                setEditorName(e.target.value);
-                localStorage.setItem("bpmn-editor-name", e.target.value);
-              }}
-              placeholder={t("editorNamePlaceholder", lang)}
-              className="text-xs bg-transparent border-none focus:outline-none w-24 text-slate-700 dark:text-slate-300 font-medium text-start"
-              id="editor-name-input"
-            />
-          </div>
-
-          {/* Divider */}
-          <div className="h-6 w-px bg-slate-200 dark:bg-slate-700 hidden sm:block" />
-
-          {/* Undo/Redo tools */}
-          <div className="flex items-center bg-slate-50 dark:bg-slate-900 p-0.5 rounded-lg border border-slate-200 dark:border-slate-700">
-            <button
-              onClick={handleUndo}
-              className="p-1.5 hover:bg-white dark:hover:bg-slate-800 rounded text-slate-600 dark:text-slate-300 transition cursor-pointer"
-              title={t("undo", lang)}
-              id="undo-btn"
-            >
-              <Undo2 className="w-4 h-4" />
-            </button>
-            <button
-              onClick={handleRedo}
-              className="p-1.5 hover:bg-white dark:hover:bg-slate-800 rounded text-slate-600 dark:text-slate-300 transition cursor-pointer"
-              title={t("redo", lang)}
-              id="redo-btn"
-            >
-              <Redo2 className="w-4 h-4" />
-            </button>
-          </div>
-
-          {/* History dropdown trigger */}
-          <button
-            onClick={() => setIsHistoryOpen(!isHistoryOpen)}
-            className={`p-2 rounded-lg border transition relative cursor-pointer ${isHistoryOpen ? "bg-blue-50 border-blue-200 text-blue-600 dark:bg-blue-950/40 dark:border-blue-900" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"}`}
-            title={t("versionHistoryTitle", lang)}
-            id="history-toggle-btn"
-          >
-            <History className="w-4 h-4" />
-          </button>
-
-          {/* Compare Button */}
-          {currentDiagram && (currentDiagram.versions || []).length >= 2 && (
-            <button
-              onClick={handleCompareWithPrevious}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition relative cursor-pointer text-xs font-semibold ${diffingXmls ? "bg-amber-100 border-amber-300 text-amber-700 dark:bg-amber-900/40 dark:border-amber-700 dark:text-amber-400" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"}`}
-              title={t("diffTooltip", lang)}
-            >
-              <GitCompare className="w-4 h-4" />
-              <span className="hidden md:inline">Diff</span>
-            </button>
-          )}
-
-                    {/* Action Buttons */}
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setLang(lang === "fa" ? "en" : "fa")}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition font-medium text-sm"
-              title={t("switchLanguage", lang)}
-            >
-              <Globe className="w-4 h-4" />
-              <span className="hidden sm:inline">{t("switchLanguage", lang)}</span>
-            </button>
-
-            <button
-              onClick={handleThemeToggle}
-              className="p-1.5 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition"
-              title={theme === "dark" ? (t("lightMode", lang)) : (t("darkMode", lang))}
-            >
-              {theme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-            </button>
-
-            <div className="w-px h-6 bg-slate-200 dark:bg-slate-700 mx-1"></div>
-
-            <div className="relative group">
-              <button
-                className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium text-sm shadow-sm"
-              >
-                <Share2 className="w-4 h-4" />
-                <span className="hidden sm:inline">{t("shareAndExport", lang)}</span>
-                <ChevronDown className="w-4 h-4" />
-              </button>
-              <div className="absolute right-0 top-full mt-1 w-56 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 origin-top-right">
-                
-                <button
-                  onClick={handleCopyEmbedLink}
-                  className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 text-start"
-                >
-                  <Link2 className="w-4 h-4 text-indigo-500" />
-                  {copiedLink ? (t("linkCopied", lang)) : (t("copyShareLink", lang))}
-                </button>
-
-                <div className="h-px w-full bg-slate-100 dark:bg-slate-700 my-1"></div>
-
-                <button
-                  onClick={handleExportSVG}
-                  className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 text-start border-t border-slate-100 dark:border-slate-700"
-                >
-                  <FileCode className="w-4 h-4 text-orange-500" />
-                  {t("exportSVG", lang)}
-                </button>
-
-                <button
-                  onClick={() => handleExportPNG(3)}
-                  className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 text-start border-t border-slate-100 dark:border-slate-700"
-                >
-                  <FileSpreadsheet className="w-4 h-4 text-emerald-500" />
-                  {t("exportPNG", lang)}
-                </button>
-                
-                <button
-                  onClick={handleExportPDF}
-                  className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 text-start border-t border-slate-100 dark:border-slate-700"
-                >
-                  <FileDown className="w-4 h-4 text-rose-500" />
-                  {t("exportPDF", lang)}
-                </button>
-
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
+      {/* Collaboration Metadata Header */}
+      {activeDiagram && (
+        <DiagramMetadataHeader
+          onSaveVersion={async (changeSummary) => {
+            if (!modelerRef.current) return;
+            const { xml } = await modelerRef.current.saveXML({ format: true });
+            if (xml) {
+              workspace.saveDiagramXmlVersion(activeDiagram.id, xml, changeSummary);
+            }
+          }}
+          onToggleHistoryDrawer={() => setIsHistoryDrawerOpen(!isHistoryDrawerOpen)}
+          onToggleCommentsDrawer={() => setIsCommentsDrawerOpen(!isCommentsDrawerOpen)}
+          unresolvedCommentsCount={(activeDiagram.comments || []).filter(c => c.status === 'open').length}
+          theme={theme}
+          setTheme={setTheme}
+          onUndo={handleUndo}
+          onRedo={handleRedo}
+          onExportBpmn={async () => {
+            if (!modelerRef.current) return;
+            const { xml } = await modelerRef.current.saveXML({ format: true });
+            if (xml) {
+              const blob = new Blob([xml], { type: "application/xml;charset=utf-8" });
+              const url = URL.createObjectURL(blob);
+              const link = document.createElement("a");
+              link.href = url;
+              link.download = `${activeDiagram.title || "process"}.bpmn`;
+              link.click();
+              URL.revokeObjectURL(url);
+            }
+          }}
+          onExportPng={() => handleExportPNG(3)}
+          onExportSvg={handleExportSVG}
+          lang={lang}
+          setLang={setLang}
+        />
+      )}
 
       
       {/* 2. Main Modeler Body Workspace */}
@@ -1694,6 +1585,22 @@ export default function BpmnModelerApp() {
           </div>
         </div>
       )}
+
+      {/* Drawers */}
+      <VersionHistoryDrawer
+        isOpen={isHistoryDrawerOpen}
+        onClose={() => setIsHistoryDrawerOpen(false)}
+        onRestoreVersionXml={(restoredXml) => {
+          if (modelerRef.current) {
+            modelerRef.current.importXML(restoredXml);
+          }
+        }}
+      />
+
+      <CommentsDrawer
+        isOpen={isCommentsDrawerOpen}
+        onClose={() => setIsCommentsDrawerOpen(false)}
+      />
     </div>
   );
 }

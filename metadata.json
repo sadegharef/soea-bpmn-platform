@@ -1,6 +1,6 @@
 {
-  "name": "BPMN 2.0 Web Modeler",
-  "description": "A professional, standalone BPMN 2.0 Modeling and Simulation Web Application for corporate workflows.",
+  "name": "سامانه هم‌نگار فرآیند (Hamnegar BPMN)",
+  "description": "سامانه مدیریت، مدلسازی و همکاری فرآیندهای کسب‌وکار (BPMN 2.0) هم‌نگار همراه با کنترل دسترسی، پوشه‌بندی و ممیزی",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
