@@ -51,11 +51,7 @@ export const TeamManagementModal: React.FC<TeamManagementModalProps> = ({ isOpen
   const isManager = currentRole === 'manager';
 
   const confirmDeleteTeam = (t: Team) => {
-    if (teams.length <= 1) {
-      setActionNotice("امکان حذف تنها تیم موجود وجود ندارد. حداقل باید یک تیم در سیستم فعال باشد.");
-      setTimeout(() => setActionNotice(null), 4000);
-      return;
-    }
+    if (t.isPersonal) return;
     const success = deleteTeam(t.id);
     if (success) {
       setActionNotice(`تیم "${t.name}" با موفقیت حذف شد.`);
@@ -439,52 +435,47 @@ export const TeamManagementModal: React.FC<TeamManagementModalProps> = ({ isOpen
                       )}
 
                       {(() => {
-                        const userRoleInTeam = currentUser ? getUserRoleInTeam(teamItem.id, currentUser.id) : 'editor';
-                        const canDelete = userRoleInTeam === 'manager';
-
-                        if (canDelete) {
+                        if (teamItem.isPersonal) {
                           return (
-                            <button
-                              type="button"
-                              onClick={() => setTeamToDelete(teamItem)}
-                              disabled={teams.length <= 1}
-                              className={`flex items-center gap-1 px-3 py-1.5 text-xs font-bold rounded-xl border transition cursor-pointer ${
-                                teams.length <= 1
-                                  ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 border-slate-200 dark:border-slate-700 cursor-not-allowed opacity-50'
-                                  : 'bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-800/60'
-                              }`}
-                              title={teams.length <= 1 ? "امکان حذف تنها تیم باقی‌مانده وجود ندارد" : "حذف این تیم (مخصوص مدیر)"}
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                              <span>حذف</span>
-                            </button>
+                            <span className="px-3 py-1.5 bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-300 rounded-xl text-xs font-bold border border-indigo-200 dark:border-indigo-800">
+                              فضای شخصی (همیشه فعال)
+                            </span>
                           );
                         }
 
+                        const userRoleInTeam = currentUser ? getUserRoleInTeam(teamItem.id, currentUser.id) : 'editor';
+                        const isTeamOwnerOrManager = userRoleInTeam === 'manager' || teamItem.ownerId === currentUser?.id;
+
                         return (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const success = leaveTeam(teamItem.id);
-                              if (success) {
-                                setActionNotice(`از تیم "${teamItem.name}" خارج شدید. این تیم برای سایر اعضا باقی ماند.`);
-                                setTimeout(() => setActionNotice(null), 4000);
-                              } else {
-                                setActionNotice("امکان خروج از تنها تیم موجود وجود ندارد.");
-                                setTimeout(() => setActionNotice(null), 4000);
-                              }
-                            }}
-                            disabled={teams.length <= 1}
-                            className={`flex items-center gap-1 px-3 py-1.5 text-xs font-bold rounded-xl border transition cursor-pointer ${
-                              teams.length <= 1
-                                ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 border-slate-200 dark:border-slate-700 cursor-not-allowed opacity-50'
-                                : 'bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 dark:hover:bg-amber-900/60 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800/60'
-                            }`}
-                            title={teams.length <= 1 ? "امکان خروج از تنها تیم موجود وجود ندارد" : "خروج از این تیم"}
-                          >
-                            <LogOut className="w-3.5 h-3.5" />
-                            <span>ترک تیم</span>
-                          </button>
+                          <div className="flex items-center gap-1.5">
+                            {isTeamOwnerOrManager && (
+                              <button
+                                type="button"
+                                onClick={() => setTeamToDelete(teamItem)}
+                                className="flex items-center gap-1 px-3 py-1.5 text-xs font-bold rounded-xl border bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-800/60 transition cursor-pointer"
+                                title="حذف این تیم (مخصوص مدیر)"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                <span>حذف</span>
+                              </button>
+                            )}
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const success = leaveTeam(teamItem.id);
+                                if (success) {
+                                  setActionNotice(`از تیم "${teamItem.name}" خارج شدید. این تیم برای سایر اعضا باقی ماند.`);
+                                  setTimeout(() => setActionNotice(null), 4000);
+                                }
+                              }}
+                              className="flex items-center gap-1 px-3 py-1.5 text-xs font-bold rounded-xl border bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 dark:hover:bg-amber-900/60 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800/60 transition cursor-pointer"
+                              title="خروج از این تیم"
+                            >
+                              <LogOut className="w-3.5 h-3.5" />
+                              <span>ترک تیم</span>
+                            </button>
+                          </div>
                         );
                       })()}
                     </div>

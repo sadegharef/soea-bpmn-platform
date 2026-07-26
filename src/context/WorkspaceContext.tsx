@@ -260,8 +260,38 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     checkShareUrl();
   }, [diagrams.length]);
 
-  // محاسبه تیم و فرآیند فعال
-  const activeTeam = teams.find(t => t.id === activeTeamId) || teams[0] || INITIAL_TEAMS[0];
+  // محاسبه فضای شخصی کاربر و تیم فعال
+  const personalWorkspace: Team = currentUser ? {
+    id: `personal_${currentUser.id}`,
+    name: `فضای شخصی (${currentUser.name})`,
+    nameEn: `Personal Workspace (${currentUser.nameEn || currentUser.name})`,
+    description: 'فضای کاری شخصی و اختصاصی شما جهت ساخت، ویرایش و مدیریت فرآیندها',
+    ownerId: currentUser.id,
+    createdAt: '2025-01-01',
+    isPersonal: true,
+    members: [{ userId: currentUser.id, user: currentUser, role: 'manager', joinedAt: '2025-01-01' }]
+  } : {
+    id: 'personal_default',
+    name: 'فضای شخصی',
+    nameEn: 'Personal Workspace',
+    description: 'فضای شخصی',
+    ownerId: 'u1',
+    createdAt: '2025-01-01',
+    isPersonal: true,
+    members: [{ userId: 'u1', user: INITIAL_USERS[0], role: 'manager', joinedAt: '2025-01-01' }]
+  };
+
+  const userWorkspaces = currentUser
+    ? [
+        personalWorkspace,
+        ...teams.filter(t => t.members.some(m => m.userId === currentUser.id))
+      ]
+    : [personalWorkspace, ...teams];
+
+  const activeTeam = (activeTeamId.startsWith('personal_') || activeTeamId === personalWorkspace.id)
+    ? personalWorkspace
+    : (teams.find(t => t.id === activeTeamId) || personalWorkspace);
+
   const activeDiagram = diagrams.find(d => d.id === activeDiagramId) || null;
 
   // محاسبه نقش کاربر در تیم فعال بر اساس RBAC و لینک‌های اشتراک‌گذاری
@@ -417,9 +447,9 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     })));
   };
 
-  // مدیریت تیم
+  // مدیریت تیم و فضای شخصی
   const switchTeam = (teamId: string) => {
-    if (teams.some(t => t.id === teamId)) {
+    if (teamId.startsWith('personal_') || teams.some(t => t.id === teamId)) {
       setActiveTeamId(teamId);
       setSelectedFolderId(null);
     }
@@ -450,25 +480,24 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   const deleteTeam = (teamId: string): boolean => {
-    if (teams.length <= 1) return false;
+    if (teamId.startsWith('personal_')) return false;
     const remaining = teams.filter(t => t.id !== teamId);
-    const targetTeamId = remaining[0].id;
-
-    // Reassign diagrams and folders belonging to deleted team
-    setDiagrams(prev => prev.map(d => d.teamId === teamId ? { ...d, teamId: targetTeamId } : d));
-    setFolders(prev => prev.map(f => f.teamId === teamId ? { ...f, teamId: targetTeamId } : f));
+    
+    // Reassign diagrams and folders belonging to deleted team to personal workspace
+    setDiagrams(prev => prev.map(d => d.teamId === teamId ? { ...d, teamId: personalWorkspace.id } : d));
+    setFolders(prev => prev.map(f => f.teamId === teamId ? { ...f, teamId: personalWorkspace.id } : f));
 
     setTeams(remaining);
     if (activeTeamId === teamId) {
-      setActiveTeamId(targetTeamId);
+      setActiveTeamId(personalWorkspace.id);
       setSelectedFolderId(null);
     }
     return true;
   };
 
   const leaveTeam = (teamId: string): boolean => {
-    if (teams.length <= 1) return false;
     if (!currentUser) return false;
+    if (teamId.startsWith('personal_')) return false;
 
     const targetTeam = teams.find(t => t.id === teamId);
     if (!targetTeam) return false;
@@ -484,12 +513,8 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }));
 
     if (activeTeamId === teamId) {
-      const otherTeams = teams.filter(t => t.id !== teamId && t.members.some(m => m.userId === currentUser.id));
-      const nextActiveId = otherTeams.length > 0 ? otherTeams[0].id : teams.find(t => t.id !== teamId)?.id || '';
-      if (nextActiveId) {
-        setActiveTeamId(nextActiveId);
-        setSelectedFolderId(null);
-      }
+      setActiveTeamId(personalWorkspace.id);
+      setSelectedFolderId(null);
     }
     return true;
   };
@@ -761,7 +786,7 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       registerUser,
       updateUserProfile,
       activeTeam,
-      teams,
+      teams: userWorkspaces,
       switchTeam,
       createTeam,
       deleteTeam,

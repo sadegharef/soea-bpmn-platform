@@ -149,7 +149,7 @@ export const DiagramsDashboard: React.FC<DiagramsDashboardProps> = ({ theme, set
   };
 
   return (
-    <div className="h-screen w-full overflow-y-auto bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans" dir="rtl">
+    <div className="min-h-screen w-full flex flex-col justify-between bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans" dir="rtl">
       
       {/* هدر و نوار ابزار بالای صفحه */}
       <header className="sticky top-0 z-30 bg-slate-900 border-b border-slate-800 text-white shadow-lg">
@@ -170,7 +170,7 @@ export const DiagramsDashboard: React.FC<DiagramsDashboardProps> = ({ theme, set
           {/* انتخاب‌گر تیم، مدیریت حساب و پوسته */}
           <div className="flex items-center gap-3">
             
-            {/* انتخاب‌گر تیم کاری */}
+            {/* انتخاب‌گر تیم کاری و فضای شخصی */}
             <div className="relative">
               <select
                 value={activeTeam.id}
@@ -179,7 +179,7 @@ export const DiagramsDashboard: React.FC<DiagramsDashboardProps> = ({ theme, set
               >
                 {teams.map(t => (
                   <option key={t.id} value={t.id}>
-                    {t.name}
+                    {t.isPersonal ? `👤 ${t.name}` : `👥 ${t.name}`}
                   </option>
                 ))}
               </select>
@@ -245,7 +245,7 @@ export const DiagramsDashboard: React.FC<DiagramsDashboardProps> = ({ theme, set
       </header>
 
       {/* بخش اصلی محتوای داشبورد */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 space-y-6">
         
         {/* کارت‌های شاخص و آماری (Metrics Banner) */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
@@ -452,7 +452,7 @@ export const DiagramsDashboard: React.FC<DiagramsDashboardProps> = ({ theme, set
       </main>
 
       {/* فوتر سامانه هم‌نگار */}
-      <footer className="mt-8 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 py-4 px-6 text-xs text-slate-500 dark:text-slate-400">
+      <footer className="mt-auto bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 py-4 px-6 text-xs text-slate-500 dark:text-slate-400">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-right">
           <div className="flex items-center gap-2">
             <span className="font-bold text-slate-800 dark:text-slate-200">سامانه مدیریت فرآیندهای هم‌نگار</span>

@@ -112,6 +112,7 @@ export const DiagramMetadataHeader: React.FC<DiagramMetadataHeaderProps> = ({
     historyBtn: isEn ? 'History' : 'تاریخچه نسخ',
     historyTooltip: isEn ? 'Saved Version History' : 'تاریخچه نسخه‌های ذخیره‌شده',
     exportBtn: isEn ? 'Share & Export' : 'اشتراک و خروجی',
+    shareSettings: isEn ? 'Workspace Sharing Settings' : 'تنظیمات اشتراک‌گذاری',
     exportTooltip: isEn ? 'Download & Share Process' : 'دانلود و اشتراک فرآیند',
     copyLink: isEn ? 'Copy Share Link' : 'کپی لینک اشتراک',
     copiedLink: isEn ? 'Link Copied!' : 'لینک کپی شد!',
@@ -402,7 +403,7 @@ export const DiagramMetadataHeader: React.FC<DiagramMetadataHeaderProps> = ({
                     className={`w-full ${isEn ? 'text-left' : 'text-right'} px-3 py-2 text-xs font-bold text-indigo-300 hover:bg-indigo-950/50 rounded-xl transition flex items-center gap-2 cursor-pointer border border-indigo-800/40`}
                   >
                     <Share2 className="w-4 h-4 text-indigo-400" />
-                    <span>تنظیمات اشتراک‌گذاری (Workspace Share)</span>
+                    <span>{t.shareSettings}</span>
                   </button>
                   <button
                     onClick={() => { handleCopyLink(); setIsExportOpen(false); }}

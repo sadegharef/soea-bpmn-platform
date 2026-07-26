@@ -80,43 +80,149 @@ html, body, #root {
 @import "bpmn-js-token-simulation/assets/css/bpmn-js-token-simulation.css";
 @import "bpmn-js-bpmnlint/dist/assets/css/bpmn-js-bpmnlint.css";
 
-/* Align Palette to right/left based on language direction */
+/* Token simulation theme variable overrides - replaces all green with Indigo (#4f46e5) */
+:root {
+  --token-simulation-green-base-44: #4f46e5 !important;
+}
+
+/* Palette positioning: Right side in RTL, Left side in LTR */
 html[dir="rtl"] .bjs-container .djs-palette {
-  left: auto !important;
   right: 20px !important;
-}
-html[dir="ltr"] .bjs-container .djs-palette {
-  right: auto !important;
-  left: 20px !important;
-}
-.bjs-container .djs-palette {
+  left: auto !important;
   top: 20px !important;
-  border-radius: 8px !important;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08) !important;
-  border: 1px solid #e2e8f0 !important;
+  z-index: 25 !important;
+}
+
+html[dir="ltr"] .bjs-container .djs-palette {
+  left: 20px !important;
+  right: auto !important;
+  top: 20px !important;
+  z-index: 25 !important;
+}
+
+.bjs-container .djs-palette {
+  border-radius: 12px !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12) !important;
+  border: 1px solid #cbd5e1 !important;
   background-color: #ffffff !important;
 }
 
-/* Simulation styling changes */
-
-
-/* Ensure the simulation bar (play, pause, etc) is placed near the toggle */
-.bts-token-simulation-bar {
-  top: 70px !important;
+/* Simulation toggle button (Play button at top-left) */
+.bts-toggle-mode {
+  top: 20px !important;
   left: 20px !important;
   right: auto !important;
+  z-index: 30 !important;
+  background-color: #4f46e5 !important;
+  color: #ffffff !important;
+  border: 1px solid #6366f1 !important;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3) !important;
+  border-radius: 12px !important;
 }
 
-/* Minimap styling */
+.bts-toggle-mode:hover,
+.bts-toggle-mode.active,
+.bts-toggle-mode:focus,
+.bjs-container.simulation .bts-toggle-mode {
+  background-color: #4338ca !important;
+  color: #ffffff !important;
+}
+
+/* Token simulation control bar */
+.bts-token-simulation-bar {
+  top: 20px !important;
+  left: 80px !important;
+  right: auto !important;
+  z-index: 30 !important;
+}
+
+/* Override all green colors in token simulation with Indigo theme */
+.bts-token-simulation-bar,
+.bts-speed-control,
+.bts-set-animation-speed,
+.bts-log,
+.bts-notifications,
+.bts-status-badge {
+  background-color: #1e1b4b !important;
+  border-color: #4338ca !important;
+  color: #ffffff !important;
+}
+
+.bts-token-simulation-bar .bts-entry,
+.bts-token-simulation-bar button,
+.bts-speed-control button,
+.bts-speed-control .bts-entry,
+.bts-set-animation-speed .bts-animation-speed-button {
+  background-color: #312e81 !important;
+  color: #ffffff !important;
+  border-color: #4338ca !important;
+}
+
+.bts-set-animation-speed .bts-animation-speed-button.active,
+.bts-set-animation-speed .bts-animation-speed-button:hover,
+.bts-speed-control .active,
+.bts-speed-control button.active,
+.bts-speed-control button:hover,
+.bts-speed-control *:hover,
+.bts-speed-control .bts-entry.active,
+.bts-speed-control button,
+.bts-speed-control .active button,
+.bts-token-simulation-bar *:hover,
+.bts-token-simulation-bar .bts-entry:hover,
+.bts-token-simulation-bar button:hover,
+.bts-palette .bts-entry:not(.disabled):hover,
+.bts-palette .bts-entry.active,
+.bts-context-pad:not(.disabled):hover,
+.bts-notifications .bts-notification.success,
+.bts-element-notification.success,
+.bts-token-count.waiting {
+  background-color: #4f46e5 !important;
+  color: #ffffff !important;
+  border-color: #6366f1 !important;
+}
+
+.bts-token-simulation-bar .bts-entry.active svg,
+.bts-token-simulation-bar .active svg,
+.bts-token-simulation-bar .bts-toggle svg,
+.bts-token-simulation-bar .bts-pause svg,
+.bts-speed-control svg,
+.bts-speed-control button svg,
+.bts-speed-control *:hover svg,
+.bts-token-simulation-bar svg,
+.bts-set-animation-speed svg {
+  fill: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+/* Hard override for any default green inline or stylesheet fills in simulation */
+[class*="bts-"] [style*="00d26a"],
+[class*="bts-"] [style*="green"],
+[class*="bts-"] [style*="10b981"],
+[class*="bts-"] [style*="22c55e"],
+[class*="bts-"] [style*="10D070"],
+.bts-token-simulation-bar [style*="background"],
+.bts-speed-control [style*="background"],
+.bts-set-animation-speed [style*="background"] {
+  background-color: #4f46e5 !important;
+  color: #ffffff !important;
+  border-color: #6366f1 !important;
+}
+
+.bjs-container.simulation .djs-container {
+  box-shadow: inset 0px 0px 0px 4px #4f46e5 !important;
+}
+
+/* Minimap styling - shifted to the left (85px from right) to avoid colliding with right palette */
 .djs-minimap {
   position: absolute !important;
-  bottom: 20px !important;
-  right: 20px !important;
+  bottom: 50px !important;
+  right: 85px !important;
   border: 1px solid #cbd5e1 !important;
-  border-radius: 8px !important;
+  border-radius: 12px !important;
   overflow: hidden !important;
   background-color: #ffffff !important;
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1) !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12) !important;
+  z-index: 20 !important;
 }
 
 /* Adjust Properties Panel style with modern Tailwind-inspired design */

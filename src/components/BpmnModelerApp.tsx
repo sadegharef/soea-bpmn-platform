@@ -102,11 +102,18 @@ export default function BpmnModelerApp({ theme: propsTheme, setTheme: propsSetTh
   const [diagramName, setDiagramName] = useState<string>("");
   const [diagramNameEn, setDiagramNameEn] = useState<string>("");
   const [editorName, setEditorName] = useState<string>(() => {
-    return localStorage.getItem("bpmn-editor-name") || t("defaultEditorName", lang);
+    return currentUser?.name || localStorage.getItem("bpmn-editor-name") || t("defaultEditorName", lang);
   });
   const [editorNameEn, setEditorNameEn] = useState<string>(() => {
-    return localStorage.getItem("bpmn_editor_name_en") || "Co-Pilot";
+    return currentUser?.nameEn || localStorage.getItem("bpmn_editor_name_en") || "Co-Pilot";
   });
+
+  useEffect(() => {
+    if (currentUser?.name) {
+      setEditorName(currentUser.name);
+      if (currentUser.nameEn) setEditorNameEn(currentUser.nameEn);
+    }
+  }, [currentUser]);
 
   // UI toggles
   const [isPropertiesOpen, setIsPropertiesOpen] = useState(false);
@@ -752,6 +759,7 @@ export default function BpmnModelerApp({ theme: propsTheme, setTheme: propsSetTh
   const handlePostComment = () => {
     if (!commentInput.trim() || !selectedElementId) return;
     
+    const activeAuthorName = currentUser?.name || editorName || (lang === 'fa' ? 'علی رضایی' : 'Co-Pilot');
     let newComments = [...comments];
     
     if (replyingTo) {
@@ -763,7 +771,7 @@ export default function BpmnModelerApp({ theme: propsTheme, setTheme: propsSetTh
               id: Date.now().toString(),
               text: commentInput.trim(),
               date: new Date().toISOString(),
-              author: editorName
+              author: activeAuthorName
             }]
           };
         }
@@ -775,7 +783,7 @@ export default function BpmnModelerApp({ theme: propsTheme, setTheme: propsSetTh
         id: Date.now().toString(),
         text: commentInput.trim(),
         date: new Date().toISOString(),
-        author: editorName,
+        author: activeAuthorName,
         resolved: false,
         replies: []
       });
