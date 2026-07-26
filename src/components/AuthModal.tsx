@@ -111,44 +111,43 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
           </button>
         </div>
 
-        {/* Tabs Switcher */}
-        <div className="flex border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/80 p-1.5">
-          {currentUser && (
+        {/* Tabs Switcher - Only when logged out */}
+        {!currentUser ? (
+          <div className="flex border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/80 p-1.5">
             <button
-              onClick={() => setActiveTab('profile')}
-              className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition flex items-center justify-center gap-2 ${
-                activeTab === 'profile'
+              onClick={() => { setActiveTab('login'); setLoginError(''); }}
+              className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition flex items-center justify-center gap-2 cursor-pointer ${
+                activeTab === 'login'
                   ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm border border-slate-200/60 dark:border-slate-700/60'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
-              <User className="w-4 h-4" />
-              <span>پروفایل من</span>
+              <LogIn className="w-4 h-4" />
+              <span>ورود به حساب</span>
             </button>
-          )}
-          <button
-            onClick={() => { setActiveTab('login'); setLoginError(''); }}
-            className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition flex items-center justify-center gap-2 ${
-              activeTab === 'login'
-                ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm border border-slate-200/60 dark:border-slate-700/60'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-            }`}
-          >
-            <LogIn className="w-4 h-4" />
-            <span>{currentUser ? 'تعویض حساب' : 'ورود'}</span>
-          </button>
-          <button
-            onClick={() => { setActiveTab('register'); setLoginError(''); }}
-            className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition flex items-center justify-center gap-2 ${
-              activeTab === 'register'
-                ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm border border-slate-200/60 dark:border-slate-700/60'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-            }`}
-          >
-            <UserPlus className="w-4 h-4" />
-            <span>ثبت‌نام جدید</span>
-          </button>
-        </div>
+            <button
+              onClick={() => { setActiveTab('register'); setLoginError(''); }}
+              className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition flex items-center justify-center gap-2 cursor-pointer ${
+                activeTab === 'register'
+                  ? 'bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm border border-slate-200/60 dark:border-slate-700/60'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+              }`}
+            >
+              <UserPlus className="w-4 h-4" />
+              <span>ثبت‌نام حساب جدید</span>
+            </button>
+          </div>
+        ) : (
+          <div className="px-5 py-3 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex items-center justify-between">
+            <span className="text-xs font-extrabold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+              <User className="w-4 h-4 text-indigo-500" />
+              <span>مشخصات کاربر و حساب فعال</span>
+            </span>
+            <span className="text-[11px] font-mono font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 px-2.5 py-0.5 rounded-md border border-indigo-200 dark:border-indigo-800">
+              فعال
+            </span>
+          </div>
+        )}
 
         {/* Tab Contents */}
         <div className="p-6 max-h-[70vh] overflow-y-auto">
@@ -300,23 +299,16 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
               </div>
 
               {/* Actions */}
-              <div className="pt-2 flex items-center gap-3">
+              <div className="pt-2">
                 <button
                   onClick={() => {
                     logoutUser();
                     onClose();
                   }}
-                  className="flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition shadow-md shadow-rose-600/20 flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition shadow-md shadow-rose-600/20 flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <LogOut className="w-4 h-4" />
                   <span>خروج از حساب کاربری</span>
-                </button>
-                <button
-                  onClick={() => setActiveTab('login')}
-                  className="px-4 py-2.5 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold hover:bg-slate-300 dark:hover:bg-slate-700 transition flex items-center gap-1.5 cursor-pointer"
-                >
-                  <RefreshCw className="w-3.5 h-3.5" />
-                  <span>تعویض حساب</span>
                 </button>
               </div>
 

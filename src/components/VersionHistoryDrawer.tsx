@@ -115,19 +115,17 @@ export const VersionHistoryDrawer: React.FC<VersionHistoryDrawerProps> = ({
                     )}
 
                     {/* Restore button */}
-                    {isEditorOrManager && !isLatest && (
+                    {!isLatest && (
                       <button
                         type="button"
                         onClick={() => {
-                          if (confirm(`آیا از بازگردانی نسخه ${v.version}.0 به عنوان نسخه جدید اطمینان دارید؟`)) {
-                            onRestoreVersionXml(v.xml, v.version);
-                            onClose();
-                          }
+                          onRestoreVersionXml(v.xml, v.version);
+                          onClose();
                         }}
                         className="flex items-center gap-1 text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline bg-indigo-50 dark:bg-indigo-900/30 px-2.5 py-1 rounded-lg border border-indigo-200/60 dark:border-indigo-800/40 transition cursor-pointer"
                       >
                         <RotateCcw className="w-3.5 h-3.5" />
-                        <span>بازیابی</span>
+                        <span>بازیابی این نسخه</span>
                       </button>
                     )}
                   </div>

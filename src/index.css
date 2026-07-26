@@ -847,6 +847,19 @@ html.dark-theme .djs-popup-body {
 .diff-removed { background-color: #ef4444; }
 .diff-layout { background-color: #3b82f6; }
 
+/* Read-Only Role Styles for Viewer & Reviewer */
+.read-only-role .djs-palette {
+  display: none !important;
+}
+.read-only-role #bpmn-properties-element input,
+.read-only-role #bpmn-properties-element textarea,
+.read-only-role #bpmn-properties-element select,
+.read-only-role #bpmn-properties-element button {
+  pointer-events: none !important;
+  opacity: 0.75 !important;
+  cursor: not-allowed !important;
+}
+
 /* Dark mode for comments */
 .dark-theme .comments-container {
   background: #1e293b !important;
@@ -1331,6 +1344,26 @@ html[dir="ltr"] .bts-token-simulation-bar {
   visibility: hidden !important;
   opacity: 0 !important;
   pointer-events: none !important;
+}
+
+/* Ensure canvas elements do not bleed over modal popups (z-index control) */
+.djs-minimap {
+  z-index: 10 !important;
+}
+.djs-palette {
+  z-index: 20 !important;
+}
+.djs-context-pad {
+  z-index: 25 !important;
+}
+.bts-token-simulation-bar,
+.bts-toggleMode,
+.bts-log,
+.bts-notifications {
+  z-index: 30 !important;
+}
+.bjs-powered-by {
+  display: none !important;
 }
 
 html[dir="rtl"] { --font-sans: var(--font-sans-rtl); }

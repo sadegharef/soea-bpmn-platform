@@ -77,6 +77,8 @@ import {
 export default function BpmnModelerApp({ theme: propsTheme, setTheme: propsSetTheme }: { theme?: "light" | "dark"; setTheme?: (theme: "light" | "dark") => void }) {
   const workspace = useWorkspace();
   const activeDiagram = workspace?.activeDiagram;
+  const currentRole = workspace?.currentRole || 'manager';
+  const currentUser = workspace?.currentUser;
 
   const [isHistoryDrawerOpen, setIsHistoryDrawerOpen] = useState(false);
   const [isCommentsDrawerOpen, setIsCommentsDrawerOpen] = useState(false);
@@ -108,6 +110,11 @@ export default function BpmnModelerApp({ theme: propsTheme, setTheme: propsSetTh
 
   // UI toggles
   const [isPropertiesOpen, setIsPropertiesOpen] = useState(false);
+  const isReadOnlyRole = currentRole === 'viewer' || currentRole === 'reviewer';
+
+  useEffect(() => {
+    (window as any).__CURRENT_USER_ROLE__ = currentRole;
+  }, [currentRole]);
   const [activeRightTab, setActiveRightTab] = useState<"details" | "comments">("details");
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false); 
@@ -587,6 +594,24 @@ export default function BpmnModelerApp({ theme: propsTheme, setTheme: propsSetTh
 
     (modeler.get('eventBus') as any).on('selection.changed', handleSelectionChanged);
 
+    // Block modeling operations for Viewer and Reviewer roles
+    const currentEvtBus = modeler.get('eventBus') as any;
+    if (currentEvtBus) {
+      const blockIfReadOnly = (e: any) => {
+        const role = (window as any).__CURRENT_USER_ROLE__ || 'manager';
+        if (role === 'viewer' || role === 'reviewer') {
+          if (e && typeof e.preventDefault === 'function') e.preventDefault();
+          return false;
+        }
+      };
+
+      currentEvtBus.on('directEditing.activate', blockIfReadOnly);
+      currentEvtBus.on('shape.move.start', blockIfReadOnly);
+      currentEvtBus.on('create.start', blockIfReadOnly);
+      currentEvtBus.on('connect.start', blockIfReadOnly);
+      currentEvtBus.on('resize.start', blockIfReadOnly);
+    }
+
     let lintObserver: MutationObserver | null = null;
 
     const safeObserveLint = () => {
@@ -765,10 +790,8 @@ export default function BpmnModelerApp({ theme: propsTheme, setTheme: propsSetTh
   };
   
   const handleDeleteComment = (id: string) => {
-    if(confirm(t("deleteCommentConfirm", lang))) {
-      const newComments = comments.filter(c => c.id !== id);
-      saveComments(newComments);
-    }
+    const newComments = comments.filter(c => c.id !== id);
+    saveComments(newComments);
   };
 
 
@@ -1136,7 +1159,7 @@ export default function BpmnModelerApp({ theme: propsTheme, setTheme: propsSetTh
   };
 
   return (
-    <div className={`flex flex-col h-screen overflow-hidden text-slate-800 dark:text-slate-200 ${theme === "dark" ? "dark dark-theme bg-[#0f172a]" : "bg-slate-50"}`} dir={lang === "fa" ? "rtl" : "ltr"} id="bpmn-app-container">
+    <div className={`flex flex-col h-screen overflow-hidden text-slate-800 dark:text-slate-200 ${theme === "dark" ? "dark dark-theme bg-[#0f172a]" : "bg-slate-50"} ${isReadOnlyRole ? 'read-only-role' : ''}`} dir={lang === "fa" ? "rtl" : "ltr"} id="bpmn-app-container">
       {/* Collaboration Metadata Header */}
       {activeDiagram && (
         <DiagramMetadataHeader
@@ -1411,15 +1434,19 @@ export default function BpmnModelerApp({ theme: propsTheme, setTheme: propsSetTh
                             </span>
                             <div className="flex items-center gap-2">
                               <span className="text-[10px] text-slate-400">{formatDateTime(comment.date, lang)}</span>
-                              <button onClick={() => handleResolveComment(comment.id)} className="text-slate-400 hover:text-emerald-500 transition" title={t("toggleResolve", lang)}>
-                                <CheckCircle className="w-3.5 h-3.5" />
-                              </button>
-                              <button onClick={() => setReplyingTo(comment.id)} className="text-slate-400 hover:text-blue-500 transition" title={t("reply", lang)}>
-                                <Reply className="w-3.5 h-3.5" />
-                              </button>
-                              <button onClick={() => handleDeleteComment(comment.id)} className="text-slate-400 hover:text-red-500 transition" title={t("delete", lang)}>
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
+                              {currentRole !== 'viewer' && (
+                                <>
+                                  <button onClick={() => handleResolveComment(comment.id)} className="text-slate-400 hover:text-emerald-500 transition" title={t("toggleResolve", lang)}>
+                                    <CheckCircle className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button onClick={() => setReplyingTo(comment.id)} className="text-slate-400 hover:text-blue-500 transition" title={t("reply", lang)}>
+                                    <Reply className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button onClick={() => handleDeleteComment(comment.id)} className="text-slate-400 hover:text-red-500 transition" title={t("delete", lang)}>
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </>
+                              )}
                             </div>
                           </div>
                           <p className="text-sm text-slate-600 dark:text-slate-400 whitespace-pre-wrap mb-2">{comment.text}</p>
@@ -1442,29 +1469,40 @@ export default function BpmnModelerApp({ theme: propsTheme, setTheme: propsSetTh
                       ))
                     )}
                   </div>
-                  <div className="flex flex-col gap-2 mt-auto relative">
-                    {replyingTo && (
-                      <div className="flex items-center justify-between bg-blue-50 dark:bg-blue-900/30 p-2 rounded-md mb-1">
-                        <span className="text-xs text-blue-600 dark:text-blue-400">{t("replying", lang)}</span>
-                        <button onClick={() => setReplyingTo(null)} className="text-blue-600 dark:text-blue-400 hover:text-blue-800">
-                          <X className="w-3 h-3" />
-                        </button>
-                      </div>
-                    )}
-                    <textarea 
-                      id="new-comment-input"
-                      value={commentInput}
-                      onChange={(e) => setCommentInput(e.target.value)}
-                      className="w-full h-20 text-sm p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none"
-                      placeholder={t("writeComment", lang)}
-                    ></textarea>
-                    <button 
-                      onClick={handlePostComment}
-                      className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition"
-                    >
-                      {t("postComment", lang)}
-                    </button>
-                  </div>
+                  {currentRole === 'viewer' ? (
+                    <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 rounded-xl text-center">
+                      <p className="text-xs font-bold text-amber-700 dark:text-amber-400">
+                        سطح دسترسی شما «مشاهده‌گر (Viewer)» است.
+                      </p>
+                      <p className="text-[11px] text-amber-600 dark:text-amber-500 mt-1">
+                        امکان مشاهده نظرات وجود دارد اما ثبت نظر جدید غیرفعال است.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-2 mt-auto relative">
+                      {replyingTo && (
+                        <div className="flex items-center justify-between bg-blue-50 dark:bg-blue-900/30 p-2 rounded-md mb-1">
+                          <span className="text-xs text-blue-600 dark:text-blue-400">{t("replying", lang)}</span>
+                          <button onClick={() => setReplyingTo(null)} className="text-blue-600 dark:text-blue-400 hover:text-blue-800">
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      )}
+                      <textarea 
+                        id="new-comment-input"
+                        value={commentInput}
+                        onChange={(e) => setCommentInput(e.target.value)}
+                        className="w-full h-20 text-sm p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none"
+                        placeholder={t("writeComment", lang)}
+                      ></textarea>
+                      <button 
+                        onClick={handlePostComment}
+                        className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition cursor-pointer"
+                      >
+                        {t("postComment", lang)}
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -1604,10 +1642,25 @@ export default function BpmnModelerApp({ theme: propsTheme, setTheme: propsSetTh
       <VersionHistoryDrawer
         isOpen={isHistoryDrawerOpen}
         onClose={() => setIsHistoryDrawerOpen(false)}
-        onRestoreVersionXml={(restoredXml) => {
+        onRestoreVersionXml={(restoredXml, versionNum) => {
           if (modelerRef.current) {
-            modelerRef.current.importXML(restoredXml);
+            modelerRef.current.importXML(restoredXml).then(() => {
+              try {
+                const canvas = modelerRef.current?.get('canvas') as any;
+                canvas?.zoom?.('fit-viewport');
+              } catch(e) {}
+            });
           }
+          if (activeDiagram) {
+            workspace.saveDiagramXmlVersion(
+              activeDiagram.id,
+              restoredXml,
+              `بازگردانی و بازیابی نسخه ${versionNum}.0`
+            );
+          }
+        }}
+        onCompareVersions={(oldXml, newXml) => {
+          setDiffingXmls({ oldXml, newXml });
         }}
       />
 

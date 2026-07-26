@@ -17,7 +17,7 @@ import { WorkspaceProvider, useWorkspace } from "./context/WorkspaceContext";
  * کامپوننت داخلی مدیریت محتوای اصلی بر اساس وضعیت احراز هویت و نمای فعال (Login vs Dashboard vs Modeler)
  */
 function MainAppContent() {
-  const { isAuthenticated, activeView } = useWorkspace();
+  const { isAuthenticated, activeView, activeDiagram } = useWorkspace();
   const [theme, setTheme] = useState<"light" | "dark">((): "light" | "dark" => {
     return (localStorage.getItem("bpmn-theme") as "light" | "dark") || "light";
   });
@@ -34,13 +34,20 @@ function MainAppContent() {
     localStorage.setItem("bpmn-theme", theme);
   }, [theme]);
 
-  // تا زمانی که کاربر وارد سامانه هم‌نگار نشده است، فقط صفحه ورود نشان داده می‌شود
-  if (!isAuthenticated) {
+  const hasShareParam = typeof window !== 'undefined' && (
+    window.location.search.includes('share=') || 
+    window.location.search.includes('diagram=') || 
+    window.location.hash.includes('#share-') ||
+    window.location.hash.includes('#embed-')
+  );
+
+  // در صورت وجود لینک اشتراک‌گذاری یا دیاگرام فعال، بدون نیاز به ورود مستقیم وارد مدلر می‌شود
+  if (!isAuthenticated && !activeDiagram && !hasShareParam) {
     return <LoginScreen />;
   }
 
   // رندر نمای داشبورد یا بوم طراحی بر اساس حالت برنامه
-  if (activeView === "dashboard") {
+  if (activeView === "dashboard" && isAuthenticated) {
     return <DiagramsDashboard theme={theme} setTheme={setTheme} />;
   }
 

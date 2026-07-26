@@ -214,12 +214,60 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setTagBank(prev => prev.filter(t => t.id !== id));
   };
 
+  // پشتیبانی از لینک‌های اشتراک‌گذاری مستقیم (Share Links)
+  useEffect(() => {
+    const checkShareUrl = () => {
+      const href = window.location.href;
+      const hash = window.location.hash;
+      const search = window.location.search;
+      
+      let targetDiagramId: string | null = null;
+      let urlAccessLevel: string | null = null;
+
+      if (search.includes('share=')) {
+        const match = search.match(/share=([^&]+)/);
+        if (match) targetDiagramId = match[1];
+      } else if (search.includes('diagram=')) {
+        const match = search.match(/diagram=([^&]+)/);
+        if (match) targetDiagramId = match[1];
+      } else if (hash.includes('#share-')) {
+        const match = hash.match(/#share-([^?&]+)/);
+        if (match) targetDiagramId = match[1];
+      } else if (hash.includes('#embed-')) {
+        const match = hash.match(/#embed-([^?&]+)/);
+        if (match) targetDiagramId = match[1];
+      }
+
+      if (href.includes('access=')) {
+        const match = href.match(/access=([^&]+)/);
+        if (match) urlAccessLevel = match[1];
+      }
+
+      if (targetDiagramId) {
+        const found = diagrams.find(d => d.id === targetDiagramId);
+        if (found) {
+          setActiveDiagramId(found.id);
+          setActiveView('modeler');
+          if (urlAccessLevel) {
+            (window as any).__URL_ACCESS_OVERRIDE__ = urlAccessLevel;
+          }
+        }
+      }
+    };
+
+    checkShareUrl();
+  }, [diagrams.length]);
+
   // محاسبه تیم و فرآیند فعال
   const activeTeam = teams.find(t => t.id === activeTeamId) || teams[0] || INITIAL_TEAMS[0];
   const activeDiagram = diagrams.find(d => d.id === activeDiagramId) || null;
 
   // محاسبه نقش کاربر در تیم فعال بر اساس RBAC
   const getUserRoleInTeam = (teamId: string, userId: string): TeamRole => {
+    const override = (window as any).__URL_ACCESS_OVERRIDE__;
+    if (override && (override === 'viewer' || override === 'editor' || override === 'reviewer' || override === 'manager')) {
+      return override as TeamRole;
+    }
     if (!userId) return 'viewer';
     const team = teams.find(t => t.id === teamId);
     if (!team) return 'viewer';
@@ -227,7 +275,7 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     return member ? member.role : 'viewer';
   };
 
-  const currentRole = currentUser ? getUserRoleInTeam(activeTeam.id, currentUser.id) : 'viewer';
+  const currentRole = getUserRoleInTeam(activeTeam.id, currentUser ? currentUser.id : '');
 
   // توابع احراز هویت
   const loginUser = (usernameOrEmail: string, password: string): { success: boolean; error?: string } => {
@@ -525,7 +573,10 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   const saveDiagramXmlVersion = (diagramId: string, xml: string, changeSummary?: string) => {
-    if (!currentUser) return;
+    const editorId = currentUser ? currentUser.id : 'guest_user';
+    const editorName = currentUser ? currentUser.name : 'کاربر مهمان';
+    const editorAvatar = currentUser ? currentUser.avatar : 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80';
+
     setDiagrams(prev => prev.map(d => {
       if (d.id === diagramId) {
         const nextVer = d.latestVersion + 1;
@@ -533,15 +584,15 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           version: nextVer,
           xml,
           timestamp: new Date().toISOString().replace('T', ' ').substring(0, 16),
-          editorId: currentUser.id,
-          editorName: currentUser.name,
+          editorId,
+          editorName,
           changeSummary: changeSummary || `ویرایش و ذخیره نسخه ${nextVer}.0`
         };
 
-        const existingContrib = d.contributors.find(c => c.userId === currentUser.id);
+        const existingContrib = d.contributors.find(c => c.userId === editorId);
         const updatedContribs = existingContrib 
-          ? d.contributors.map(c => c.userId === currentUser.id ? { ...c, timestamp: new Date().toISOString().replace('T', ' ').substring(0, 16), action: `ذخیره نسخه ${nextVer}.0` } : c)
-          : [...d.contributors, { userId: currentUser.id, name: currentUser.name, avatar: currentUser.avatar, action: `ذخیره نسخه ${nextVer}.0`, timestamp: new Date().toISOString().replace('T', ' ').substring(0, 16) }];
+          ? d.contributors.map(c => c.userId === editorId ? { ...c, timestamp: new Date().toISOString().replace('T', ' ').substring(0, 16), action: `ذخیره نسخه ${nextVer}.0` } : c)
+          : [...d.contributors, { userId: editorId, name: editorName, avatar: editorAvatar, action: `ذخیره نسخه ${nextVer}.0`, timestamp: new Date().toISOString().replace('T', ' ').substring(0, 16) }];
 
         return {
           ...d,
@@ -567,12 +618,15 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   // نظرات
   const addCommentToDiagram = (diagramId: string, content: string, elementId?: string) => {
-    if (!currentUser) return;
+    const userId = currentUser ? currentUser.id : 'guest_user';
+    const userName = currentUser ? currentUser.name : 'کاربر مهمان';
+    const userAvatar = currentUser ? currentUser.avatar : 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80';
+
     const newComment: ReviewComment = {
       id: `c_${Date.now()}`,
-      userId: currentUser.id,
-      userName: currentUser.name,
-      userAvatar: currentUser.avatar,
+      userId,
+      userName,
+      userAvatar,
       content,
       elementId,
       timestamp: new Date().toISOString().replace('T', ' ').substring(0, 16),

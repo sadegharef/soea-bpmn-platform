@@ -1,16 +1,13 @@
 /**
  * @file DiffModal.tsx
- * @description پنجره مقایسه بصری و متنی دو نسخه مختلف فرآیند (Diagram Visual Diff)
- * @architecture
- * - Single Responsibility Principle (SRP): محاسبه تغییرات XML و هایلایت بصری المان‌های افزوده‌شده، حذف‌شده یا تغییریافته
+ * @description پنجره مقایسه بصری و تفاوتی دو نسخه مختلف فرآیند (Diagram Visual Diff شبیه bpmn.io/diff)
  */
 
 import React, { useEffect, useRef, useState } from 'react';
 import { t } from '../lib/i18n';
 import BpmnViewer from 'bpmn-js/lib/NavigatedViewer';
-import { BpmnModdle } from 'bpmn-moddle';
 import { diff } from 'bpmn-js-differ';
-import { X, SplitSquareHorizontal, FileText, MousePointerClick } from 'lucide-react';
+import { X, SplitSquareHorizontal, FileText, MousePointerClick, ChevronRight, Layers } from 'lucide-react';
 
 interface DiffModalProps {
   oldXml: string;
@@ -20,13 +17,22 @@ interface DiffModalProps {
   lang: 'fa' | 'en';
 }
 
+interface ChangeItem {
+  id: string;
+  name: string;
+  type: string; // BPMN element type (Task, Gateway, etc.)
+  changeType: 'added' | 'removed' | 'changed' | 'layout';
+}
+
 export default function DiffModal({ oldXml, newXml, onClose, theme, lang }: DiffModalProps) {
   const leftCanvasRef = useRef<HTMLDivElement>(null);
   const rightCanvasRef = useRef<HTMLDivElement>(null);
   const leftViewerRef = useRef<any>(null);
   const rightViewerRef = useRef<any>(null);
-  const [changes, setChanges] = useState<any>(null);
-  const [changeDescriptions, setChangeDescriptions] = useState<{type: string, name: string, id: string}[]>([]);
+  
+  const [changesCount, setChangesCount] = useState({ added: 0, removed: 0, changed: 0, layout: 0 });
+  const [changeList, setChangeList] = useState<ChangeItem[]>([]);
+  const [selectedChangeId, setSelectedChangeId] = useState<string | null>(null);
 
   useEffect(() => {
     leftViewerRef.current = new BpmnViewer({
@@ -37,6 +43,7 @@ export default function DiffModal({ oldXml, newXml, onClose, theme, lang }: Diff
       container: rightCanvasRef.current,
       additionalModules: []
     });
+
     const loadAndDiff = async () => {
       try {
         await leftViewerRef.current.importXML(oldXml);
@@ -47,58 +54,134 @@ export default function DiffModal({ oldXml, newXml, onClose, theme, lang }: Diff
         leftCanvas.zoom('fit-viewport');
         rightCanvas.zoom('fit-viewport');
 
-        const moddle = new BpmnModdle();
-        const { rootElement: oldDef } = await moddle.fromXML(oldXml);
-        const { rootElement: newDef } = await moddle.fromXML(newXml);
-        
-        const diffChanges = diff(oldDef, newDef);
-        setChanges(diffChanges);
-        
         const leftOverlays = leftViewerRef.current.get('overlays');
         const rightOverlays = rightViewerRef.current.get('overlays');
         const leftRegistry = leftViewerRef.current.get('elementRegistry');
         const rightRegistry = rightViewerRef.current.get('elementRegistry');
 
-        const descriptions: {type: string, name: string, id: string}[] = [];
+        let diffChanges: any = null;
+        try {
+          const oldDef = leftViewerRef.current.get('definitions');
+          const newDef = rightViewerRef.current.get('definitions');
+          if (oldDef && newDef) {
+            diffChanges = diff(oldDef, newDef);
+          }
+        } catch (e) {
+          console.warn("bpmn-js-differ error:", e);
+        }
 
-        // Added - only in new
-        Object.keys(diffChanges._added).forEach(id => {
+        // ElementRegistry visual analysis
+        const leftElements = leftRegistry.getAll().filter((e: any) => e.type !== 'bpmn:Process' && e.type !== 'bpmn:Collaboration' && e.id !== 'Process_1');
+        const rightElements = rightRegistry.getAll().filter((e: any) => e.type !== 'bpmn:Process' && e.type !== 'bpmn:Collaboration' && e.id !== 'Process_1');
+
+        const leftMap = new Map<string, any>(leftElements.map((e: any) => [e.id, e]));
+        const rightMap = new Map<string, any>(rightElements.map((e: any) => [e.id, e]));
+
+        const addedMap = new Map<string, any>();
+        const removedMap = new Map<string, any>();
+        const changedMap = new Map<string, any>();
+        const layoutMap = new Map<string, any>();
+
+        // 1. Added elements in Version B
+        rightElements.forEach((rightElem: any) => {
+          if (!leftMap.has(rightElem.id)) {
+            addedMap.set(rightElem.id, rightElem);
+          }
+        });
+        if (diffChanges && diffChanges._added) {
+          Object.keys(diffChanges._added).forEach(id => {
+            if (!addedMap.has(id)) {
+              const elem = rightRegistry.get(id);
+              if (elem) addedMap.set(id, elem);
+            }
+          });
+        }
+
+        // 2. Removed elements in Version A
+        leftElements.forEach((leftElem: any) => {
+          if (!rightMap.has(leftElem.id)) {
+            removedMap.set(leftElem.id, leftElem);
+          }
+        });
+        if (diffChanges && diffChanges._removed) {
+          Object.keys(diffChanges._removed).forEach(id => {
+            if (!removedMap.has(id)) {
+              const elem = leftRegistry.get(id);
+              if (elem) removedMap.set(id, elem);
+            }
+          });
+        }
+
+        // 3. Changed & Layout elements
+        rightElements.forEach((rightElem: any) => {
+          const leftElem: any = leftMap.get(rightElem.id);
+          if (leftElem) {
+            const leftName = (leftElem.businessObject?.name || '').trim();
+            const rightName = (rightElem.businessObject?.name || '').trim();
+            if (leftName !== rightName) {
+              changedMap.set(rightElem.id, rightElem);
+            } else if (
+              Math.abs((leftElem.x || 0) - (rightElem.x || 0)) > 3 ||
+              Math.abs((leftElem.y || 0) - (rightElem.y || 0)) > 3 ||
+              Math.abs((leftElem.width || 0) - (rightElem.width || 0)) > 3 ||
+              Math.abs((leftElem.height || 0) - (rightElem.height || 0)) > 3
+            ) {
+              layoutMap.set(rightElem.id, rightElem);
+            }
+          }
+        });
+
+        if (diffChanges && diffChanges._changed) {
+          Object.keys(diffChanges._changed).forEach(id => {
+            if (!changedMap.has(id)) {
+              const elem = rightRegistry.get(id) || leftRegistry.get(id);
+              if (elem) changedMap.set(id, elem);
+            }
+          });
+        }
+        if (diffChanges && diffChanges._layoutChanged) {
+          Object.keys(diffChanges._layoutChanged).forEach(id => {
+            if (!layoutMap.has(id)) {
+              const elem = rightRegistry.get(id) || leftRegistry.get(id);
+              if (elem) layoutMap.set(id, elem);
+            }
+          });
+        }
+
+        const list: ChangeItem[] = [];
+
+        // Apply highlights & badges
+        addedMap.forEach((elem, id) => {
           try {
             rightOverlays.add(id, 'diff', {
               position: { bottom: 0, left: 0 },
-              html: '<div class="diff-badge diff-added">+ جدید (Added)</div>'
+              html: '<div class="diff-badge diff-added">+ افزوده‌شده (Added)</div>'
             });
             const gfx = rightRegistry.getGraphics(id);
-            if (gfx) {
-              gfx.style.stroke = '#10b981';
-            }
-            const element = rightRegistry.get(id);
-            const name = element?.businessObject?.name || element?.type.replace('bpmn:', '') || id;
-            descriptions.push({ type: 'added', name, id });
+            if (gfx) gfx.style.stroke = '#10b981';
+            const name = elem?.businessObject?.name || id;
+            const type = elem?.type ? elem.type.replace('bpmn:', '') : 'Element';
+            list.push({ id, name, type, changeType: 'added' });
           } catch(e) {}
         });
 
-        // Removed - only in old
-        Object.keys(diffChanges._removed).forEach(id => {
+        removedMap.forEach((elem, id) => {
           try {
             leftOverlays.add(id, 'diff', {
               position: { bottom: 0, left: 0 },
-              html: '<div class="diff-badge diff-removed">- حذف شده (Removed)</div>'
+              html: '<div class="diff-badge diff-removed">- حذف‌شده (Removed)</div>'
             });
             const gfx = leftRegistry.getGraphics(id);
-            if (gfx) {
-              gfx.style.stroke = '#ef4444';
-            }
-            const element = leftRegistry.get(id);
-            const name = element?.businessObject?.name || element?.type.replace('bpmn:', '') || id;
-            descriptions.push({ type: 'removed', name, id });
+            if (gfx) gfx.style.stroke = '#ef4444';
+            const name = elem?.businessObject?.name || id;
+            const type = elem?.type ? elem.type.replace('bpmn:', '') : 'Element';
+            list.push({ id, name, type, changeType: 'removed' });
           } catch(e) {}
         });
 
-        // Changed - in both
-        Object.keys(diffChanges._changed).forEach(id => {
+        changedMap.forEach((elem, id) => {
           try {
-            const html = `<div class="diff-badge diff-changed">${t("diffBadgeChanged", lang)}</div>`;
+            const html = '<div class="diff-badge diff-changed">✎ تغییریافته (Changed)</div>';
             leftOverlays.add(id, 'diff', { position: { bottom: 0, left: 0 }, html });
             rightOverlays.add(id, 'diff', { position: { bottom: 0, left: 0 }, html });
             
@@ -107,16 +190,15 @@ export default function DiffModal({ oldXml, newXml, onClose, theme, lang }: Diff
             const gfxRight = rightRegistry.getGraphics(id);
             if (gfxRight) gfxRight.style.stroke = '#f59e0b';
             
-            const element = rightRegistry.get(id) || leftRegistry.get(id);
-            const name = element?.businessObject?.name || element?.type.replace('bpmn:', '') || id;
-            descriptions.push({ type: 'changed', name, id });
+            const name = elem?.businessObject?.name || id;
+            const type = elem?.type ? elem.type.replace('bpmn:', '') : 'Element';
+            list.push({ id, name, type, changeType: 'changed' });
           } catch(e) {}
         });
-        
-        // Layout Changed - in both
-        Object.keys(diffChanges._layoutChanged).forEach(id => {
+
+        layoutMap.forEach((elem, id) => {
           try {
-            const html = `<div class="diff-badge diff-layout">${t("diffBadgeLayout", lang)}</div>`;
+            const html = '<div class="diff-badge diff-layout">⤢ جابجایی (Layout)</div>';
             leftOverlays.add(id, 'diff', { position: { bottom: 0, left: 0 }, html });
             rightOverlays.add(id, 'diff', { position: { bottom: 0, left: 0 }, html });
 
@@ -125,15 +207,21 @@ export default function DiffModal({ oldXml, newXml, onClose, theme, lang }: Diff
             const gfxRight = rightRegistry.getGraphics(id);
             if (gfxRight) gfxRight.style.stroke = '#3b82f6';
             
-            const element = rightRegistry.get(id) || leftRegistry.get(id);
-            const name = element?.businessObject?.name || element?.type.replace('bpmn:', '') || id;
-            descriptions.push({ type: 'layout', name, id });
+            const name = elem?.businessObject?.name || id;
+            const type = elem?.type ? elem.type.replace('bpmn:', '') : 'Element';
+            list.push({ id, name, type, changeType: 'layout' });
           } catch(e) {}
         });
 
-        setChangeDescriptions(descriptions);
+        setChangesCount({
+          added: addedMap.size,
+          removed: removedMap.size,
+          changed: changedMap.size,
+          layout: layoutMap.size
+        });
+        setChangeList(list);
 
-        // Sync viewboxes (scroll/pan sync)
+        // Synchronize viewboxes between left and right viewers
         const leftEventBus = leftViewerRef.current.get('eventBus');
         const rightEventBus = rightViewerRef.current.get('eventBus');
         let isSyncing = false;
@@ -141,19 +229,19 @@ export default function DiffModal({ oldXml, newXml, onClose, theme, lang }: Diff
         leftEventBus.on('canvas.viewbox.changed', (e: any) => {
           if (isSyncing) return;
           isSyncing = true;
-          rightCanvas.viewbox(e.viewbox);
+          try { rightCanvas.viewbox(e.viewbox); } catch(err){}
           isSyncing = false;
         });
         
         rightEventBus.on('canvas.viewbox.changed', (e: any) => {
           if (isSyncing) return;
           isSyncing = true;
-          leftCanvas.viewbox(e.viewbox);
+          try { leftCanvas.viewbox(e.viewbox); } catch(err){}
           isSyncing = false;
         });
 
       } catch (err) {
-        console.error('Error in diff viewer:', err);
+        console.error('Error rendering diff viewer:', err);
       }
     };
     
@@ -165,109 +253,203 @@ export default function DiffModal({ oldXml, newXml, onClose, theme, lang }: Diff
     };
   }, [oldXml, newXml]);
 
-  const handleFocusChange = (id: string, type: string) => {
-    try {
-      const viewer = (type === 'removed') ? leftViewerRef.current : rightViewerRef.current;
+  const handleSelectChangeItem = (item: ChangeItem) => {
+    setSelectedChangeId(item.id);
+    const centerElement = (viewer: any) => {
       if (!viewer) return;
-      
-      const elementRegistry = viewer.get('elementRegistry');
-      const element = elementRegistry.get(id);
-      
-      if (element) {
+      try {
+        const registry = viewer.get('elementRegistry');
         const canvas = viewer.get('canvas');
-        const viewbox = { x: element.x - 100, y: element.y - 100, width: element.width + 200, height: element.height + 200 };
-        canvas.viewbox(viewbox);
-        
-        canvas.addMarker(id, 'highlight');
-        setTimeout(() => {
-          try { canvas.removeMarker(id, 'highlight'); } catch(e){}
-        }, 1500);
-      }
-    } catch(e) {}
+        const element = registry.get(item.id);
+        if (element) {
+          const bbox = element.x !== undefined ? {
+            x: element.x - 120,
+            y: element.y - 120,
+            width: (element.width || 100) + 240,
+            height: (element.height || 80) + 240
+          } : null;
+          if (bbox) canvas.viewbox(bbox);
+          canvas.addMarker(item.id, 'highlight');
+          setTimeout(() => {
+            try { canvas.removeMarker(item.id, 'highlight'); } catch(e){}
+          }, 2000);
+        }
+      } catch(e){}
+    };
+
+    if (item.changeType === 'removed') {
+      centerElement(leftViewerRef.current);
+    } else if (item.changeType === 'added') {
+      centerElement(rightViewerRef.current);
+    } else {
+      centerElement(leftViewerRef.current);
+      centerElement(rightViewerRef.current);
+    }
   };
 
   return (
-    <div className={`fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[9999] animate-in fade-in duration-200 ${theme === 'dark' ? 'dark-theme' : ''}`}>
-      <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xl w-full h-full max-w-[95vw] max-h-[95vh] flex flex-col font-sans">
+    <div className={`fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 z-[999999] animate-in fade-in duration-200 ${theme === 'dark' ? 'dark-theme dark' : ''}`} dir="rtl">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl w-full h-full max-w-[96vw] max-h-[94vh] flex flex-col font-sans overflow-hidden">
         
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 p-4">
-          <div className="flex items-center gap-3 text-slate-800 dark:text-slate-200">
-            <SplitSquareHorizontal className="w-5 h-5 text-indigo-500" />
-            <h2 className="font-bold text-lg">{t("diffModalTitle", lang)}</h2>
+        {/* Top Navigation Header */}
+        <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 px-5 py-3.5 bg-slate-900 text-white shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-2xl bg-indigo-600/30 border border-indigo-500/40 flex items-center justify-center text-indigo-400">
+              <SplitSquareHorizontal className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="font-extrabold text-sm text-white flex items-center gap-2">
+                <span>مقایسه بصری نسخه‌ها (Visual BPMN Diff)</span>
+              </h2>
+              <p className="text-[11px] text-slate-400">تشخیص اتوماتیک افزوده‌ها، حذفیات، تغییرات ویژگی و جابجایی المان‌ها</p>
+            </div>
           </div>
-          <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-white transition rounded-md hover:bg-slate-100 dark:hover:bg-slate-800">
+
+          {/* Quick Counter Summary */}
+          <div className="hidden md:flex items-center gap-2 text-xs">
+            <span className="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold">
+              +{changesCount.added} افزوده‌شده
+            </span>
+            <span className="px-2.5 py-1 rounded-lg bg-rose-500/20 text-rose-400 border border-rose-500/30 font-bold">
+              -{changesCount.removed} حذف‌شده
+            </span>
+            <span className="px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/30 font-bold">
+              {changesCount.changed} تغییر‌یافته
+            </span>
+            <span className="px-2.5 py-1 rounded-lg bg-blue-500/20 text-blue-400 border border-blue-500/30 font-bold">
+              {changesCount.layout} چیدمان
+            </span>
+          </div>
+
+          <button 
+            onClick={onClose} 
+            className="p-2 text-slate-400 hover:text-white transition rounded-xl hover:bg-slate-800 cursor-pointer"
+            title="بستن پنجره مقایسه"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="flex-1 flex overflow-hidden">
-          {/* Sidebar for descriptions */}
-          <div className="w-72 bg-slate-50 dark:bg-slate-950 border-l border-slate-200 dark:border-slate-800 flex flex-col overflow-y-auto">
-            <div className="p-4 border-b border-slate-200 dark:border-slate-800 sticky top-0 bg-slate-50 dark:bg-slate-950 z-10 flex items-center gap-2 text-slate-800 dark:text-slate-200 font-bold">
-              <FileText className="w-4 h-4" />
-              تغییرات یافت شده
+        {/* Workspace Body */}
+        <div className="flex-1 flex overflow-hidden relative">
+          
+          {/* Side Table panel: List of Changes */}
+          <div className="w-80 bg-slate-50 dark:bg-slate-950 border-l border-slate-200 dark:border-slate-800 flex flex-col shrink-0 shadow-inner">
+            <div className="p-3.5 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-between">
+              <span className="font-extrabold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <FileText className="w-4 h-4 text-indigo-500" />
+                <span>لیست تغییرات (List of Changes)</span>
+              </span>
+              <span className="text-[10px] font-mono text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full font-bold">
+                {changeList.length} مورد
+              </span>
             </div>
-            <div className="p-4 space-y-3">
-              {changeDescriptions.length === 0 ? (
-                <div className="text-sm text-slate-500 dark:text-slate-400 text-center py-4">{t("noChangesFound", lang)}</div>
+
+            <div className="flex-1 overflow-y-auto p-2.5 space-y-2">
+              {changeList.length === 0 ? (
+                <div className="text-center py-12 px-4 space-y-2">
+                  <Layers className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto" />
+                  <p className="font-bold text-xs text-slate-700 dark:text-slate-300">هیچ تفاوتی ساختاری یافت نشد</p>
+                  <p className="text-[11px] text-slate-400">هر دو نسخه کاملاً همسان هستند.</p>
+                </div>
               ) : (
-                changeDescriptions.map((desc, idx) => (
-                  <div 
-                    key={idx} 
-                    onClick={() => handleFocusChange(desc.id, desc.type)}
-                    className="flex flex-col gap-1 text-sm border border-slate-200 dark:border-slate-700 p-2 rounded-lg bg-white dark:bg-slate-900 shadow-sm cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition relative group"
-                  >
-                    <MousePointerClick className="w-4 h-4 absolute top-2 left-2 text-slate-300 dark:text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity" />
-                    <span className="font-semibold text-slate-800 dark:text-slate-200 break-all pl-6">{desc.name}</span>
-                    <div className="flex items-center gap-1.5 text-xs">
-                      {desc.type === 'added' && <><span className="w-2 h-2 rounded-full bg-emerald-500"></span><span className="text-emerald-600 dark:text-emerald-400 font-medium">{t("diffAdded", lang)}</span></>}
-                      {desc.type === 'removed' && <><span className="w-2 h-2 rounded-full bg-red-500"></span><span className="text-red-600 dark:text-red-400 font-medium">{t("diffRemoved", lang)}</span></>}
-                      {desc.type === 'changed' && <><span className="w-2 h-2 rounded-full bg-amber-500"></span><span className="text-amber-600 dark:text-amber-400 font-medium">{t("diffChanged", lang)}</span></>}
-                      {desc.type === 'layout' && <><span className="w-2 h-2 rounded-full bg-blue-500"></span><span className="text-blue-600 dark:text-blue-400 font-medium">{t("diffLayout", lang)}</span></>}
+                changeList.map((item, idx) => {
+                  const isSelected = selectedChangeId === item.id;
+                  return (
+                    <div
+                      key={`${item.id}-${idx}`}
+                      onClick={() => handleSelectChangeItem(item)}
+                      className={`p-3 rounded-xl border transition cursor-pointer flex items-center justify-between gap-2 text-xs ${
+                        isSelected
+                          ? 'bg-indigo-50 dark:bg-indigo-950/60 border-indigo-500 ring-1 ring-indigo-500/30'
+                          : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
+                      }`}
+                    >
+                      <div className="space-y-1 min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-mono text-[10px] text-slate-400">#{idx + 1}</span>
+                          <span className="font-bold text-slate-900 dark:text-slate-100 truncate block">
+                            {item.name}
+                          </span>
+                        </div>
+                        <span className="text-[10px] font-mono text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded inline-block">
+                          {item.type}
+                        </span>
+                      </div>
+
+                      {/* Change Badge */}
+                      <div className="shrink-0">
+                        {item.changeType === 'added' && (
+                          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500 text-white">
+                            Added
+                          </span>
+                        )}
+                        {item.changeType === 'removed' && (
+                          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-500 text-white">
+                            Removed
+                          </span>
+                        )}
+                        {item.changeType === 'changed' && (
+                          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500 text-white">
+                            Changed
+                          </span>
+                        )}
+                        {item.changeType === 'layout' && (
+                          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-500 text-white">
+                            Layout
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </div>
 
-          {/* Diff Canvas Area */}
-          <div className="flex-1 flex overflow-hidden bg-slate-50 dark:bg-slate-950 relative">
-            <div className="flex-1 border-l border-slate-200 dark:border-slate-700 flex flex-col relative">
-              <div className="absolute top-4 left-4 z-10 bg-white/80 dark:bg-slate-800/80 px-3 py-1.5 rounded text-sm font-medium border border-slate-200 dark:border-slate-700 shadow-sm backdrop-blur text-slate-800 dark:text-slate-200">
-                نسخه قبلی
+          {/* Side-by-side Viewports Area */}
+          <div className="flex-1 flex overflow-hidden bg-slate-100 dark:bg-slate-950 relative">
+            
+            {/* Left Viewer Container: Version A (Old Version) */}
+            <div className="flex-1 border-l border-slate-300 dark:border-slate-800 flex flex-col relative">
+              <div className="absolute top-3 right-3 z-20 bg-slate-900/90 text-white px-3 py-1 rounded-xl text-xs font-bold shadow-md border border-slate-700 backdrop-blur flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-rose-500"></span>
+                <span>نسخه مبدأ (Version A - Old)</span>
               </div>
               <div ref={leftCanvasRef} className="w-full h-full bpmn-container" dir="ltr"></div>
             </div>
 
+            {/* Right Viewer Container: Version B (New Version) */}
             <div className="flex-1 flex flex-col relative">
-               <div className="absolute top-4 right-4 z-10 bg-white/80 dark:bg-slate-800/80 px-3 py-1.5 rounded text-sm font-medium border border-slate-200 dark:border-slate-700 shadow-sm backdrop-blur text-slate-800 dark:text-slate-200">
-                نسخه فعلی
+              <div className="absolute top-3 right-3 z-20 bg-indigo-900/90 text-white px-3 py-1 rounded-xl text-xs font-bold shadow-md border border-indigo-700 backdrop-blur flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                <span>نسخه جدید (Version B - New)</span>
               </div>
               <div ref={rightCanvasRef} className="w-full h-full bpmn-container" dir="ltr"></div>
             </div>
 
-            {/* Legend */}
-            <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-20 flex gap-4 bg-white/90 dark:bg-slate-800/90 p-3 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 backdrop-blur" dir="ltr">
-               <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
-                  <span className="w-3 h-3 rounded bg-emerald-500"></span>
-                  <span>Added ({changes?._added ? Object.keys(changes._added).length : 0})</span>
-               </div>
-               <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
-                  <span className="w-3 h-3 rounded bg-red-500"></span>
-                  <span>Removed ({changes?._removed ? Object.keys(changes._removed).length : 0})</span>
-               </div>
-               <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
-                  <span className="w-3 h-3 rounded bg-amber-500"></span>
-                  <span>Changed ({changes?._changed ? Object.keys(changes._changed).length : 0})</span>
-               </div>
-               <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
-                  <span className="w-3 h-3 rounded bg-blue-500"></span>
-                  <span>Layout ({changes?._layoutChanged ? Object.keys(changes._layoutChanged).length : 0})</span>
-               </div>
+            {/* Bottom Floating Legend */}
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-4 bg-slate-900/95 text-white px-4 py-2 rounded-2xl shadow-2xl border border-slate-700 text-xs backdrop-blur" dir="rtl">
+              <div className="flex items-center gap-1.5 font-semibold">
+                <span className="w-3 h-3 rounded-full bg-emerald-500 inline-block"></span>
+                <span>افزوده (+{changesCount.added})</span>
+              </div>
+              <div className="flex items-center gap-1.5 font-semibold">
+                <span className="w-3 h-3 rounded-full bg-rose-500 inline-block"></span>
+                <span>حذف‌شده (-{changesCount.removed})</span>
+              </div>
+              <div className="flex items-center gap-1.5 font-semibold">
+                <span className="w-3 h-3 rounded-full bg-amber-500 inline-block"></span>
+                <span>تغییریافته ({changesCount.changed})</span>
+              </div>
+              <div className="flex items-center gap-1.5 font-semibold">
+                <span className="w-3 h-3 rounded-full bg-blue-500 inline-block"></span>
+                <span>جابجایی ({changesCount.layout})</span>
+              </div>
             </div>
+
           </div>
+
         </div>
       </div>
     </div>
