@@ -1126,19 +1126,38 @@ html.dark-theme .djs-popup-body {
    TOKEN SIMULATION STYLING & UI/UX HARMONIZATION (INDIGO THEME)
    ========================================================== */
 
-/* Token Simulation placed on OPPOSITE side of element selection palette (.djs-palette) */
-html[dir="rtl"] .bts-toggle-mode,
-html[dir="rtl"] .bts-palette, 
-html[dir="rtl"] .bts-token-simulation-bar {
-  right: auto !important;
-  left: 20px !important;
+/* Active simulation canvas border - Indigo / Violet harmonization */
+.bjs-container.simulation,
+.bjs-container.simulation .djs-container,
+.bjs-container.simulation canvas {
+  outline: 3px solid #6366f1 !important;
+  outline-offset: -3px !important;
+  border-color: #6366f1 !important;
 }
 
-html[dir="ltr"] .bts-toggle-mode,
-html[dir="ltr"] .bts-palette, 
-html[dir="ltr"] .bts-token-simulation-bar {
-  left: auto !important;
+/* Token Simulation placed on OPPOSITE side of element selection palette (.djs-palette) */
+html[dir="rtl"] .bts-toggle-mode,
+/* Force Palette on left side and Minimap on right side to eliminate overlap */
+.djs-palette {
+  left: 20px !important;
+  right: auto !important;
+  top: 20px !important;
+}
+
+html[dir="rtl"] .djs-minimap,
+html[dir="ltr"] .djs-minimap {
   right: 20px !important;
+  left: auto !important;
+  bottom: 50px !important;
+  top: auto !important;
+}
+
+html[dir="rtl"] .bts-toggle-mode, 
+html[dir="rtl"] .bts-token-simulation-bar,
+html[dir="ltr"] .bts-toggle-mode,
+html[dir="ltr"] .bts-token-simulation-bar {
+  left: 80px !important;
+  right: auto !important;
 }
 
 /* Simulation Toggle Button */
@@ -1176,7 +1195,8 @@ html[dir="ltr"] .bts-token-simulation-bar {
 }
 
 .bjs-container.simulation .bts-toggle-mode, 
-.bts-toggle-mode:hover {
+.bts-toggle-mode:hover,
+.bts-toggle-mode.active {
   background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="%23ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>') !important;
   background-color: #4f46e5 !important;
   border-color: #6366f1 !important;
@@ -1205,7 +1225,11 @@ html[dir="ltr"] .bts-token-simulation-bar {
 }
 
 .bts-token-simulation-bar button,
-.bts-token-simulation-bar .bts-entry {
+.bts-token-simulation-bar .bts-entry,
+.bts-token-simulation-bar .bts-toggle,
+.bts-token-simulation-bar .bts-pause,
+.bts-token-simulation-bar .bts-play,
+.bts-token-simulation-bar .bts-reset {
   border-radius: 8px !important;
   border: none !important;
   background: transparent !important;
@@ -1218,30 +1242,79 @@ html[dir="ltr"] .bts-token-simulation-bar {
   color: #94a3b8 !important;
 }
 
+/* Complete Override for Green Controls, Active, Hover, Speed Control & Reset/Pause */
 .bts-token-simulation-bar button:hover,
 .bts-token-simulation-bar button.active,
-.bts-token-simulation-bar .bts-entry:hover {
+.bts-token-simulation-bar .bts-entry:hover,
+.bts-token-simulation-bar .bts-entry.active,
+.bts-token-simulation-bar .bts-toggle:hover,
+.bts-token-simulation-bar .bts-toggle.active,
+.bts-token-simulation-bar .bts-pause:hover,
+.bts-token-simulation-bar .bts-pause.active,
+.bts-token-simulation-bar .bts-play:hover,
+.bts-token-simulation-bar .bts-play.active,
+.bts-token-simulation-bar .active,
+.bts-token-simulation-bar [class*="active"],
+.bts-speed-control .active,
+.bts-speed-control button.active,
+.bts-speed-control button:hover,
+.bts-speed-control *:hover,
+.bts-speed-control .bts-entry.active,
+.bts-speed-control button,
+.bts-speed-control .active button {
   background-color: #4f46e5 !important;
   color: #ffffff !important;
+  border-color: #6366f1 !important;
+}
+
+.bts-token-simulation-bar button.active svg,
+.bts-token-simulation-bar .bts-entry.active svg,
+.bts-token-simulation-bar .active svg,
+.bts-token-simulation-bar .bts-toggle svg,
+.bts-token-simulation-bar .bts-pause svg,
+.bts-speed-control svg,
+.bts-speed-control button svg,
+.bts-speed-control *:hover svg {
+  fill: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+/* Hard override for any default green inline or stylesheet fills */
+.bjs-container.simulation [style*="#00d26a"],
+.bjs-container.simulation [style*="green"],
+.bjs-container.simulation [style*="#10b981"],
+.bjs-container.simulation [style*="#22c55e"],
+.bts-token-simulation-bar [style*="background"],
+.bts-speed-control [style*="background"] {
+  background-color: #4f46e5 !important;
+  color: #ffffff !important;
+  border-color: #6366f1 !important;
 }
 
 /* Tokens and Token Count Badges */
 .bts-token circle,
-.bts-token {
+.bts-token,
+.djs-element.simulation .bts-token,
+.djs-element.simulation circle {
   fill: #6366f1 !important;
   stroke: #ffffff !important;
   stroke-width: 2px !important;
   filter: drop-shadow(0px 2px 6px rgba(99, 102, 241, 0.5));
 }
 
-.bts-token-count {
+.bts-token-count,
+.bts-badge,
+.bts-entry .scope,
+.bts-entry .id,
+.bts-log .scope,
+.bts-log .id {
   background-color: #4f46e5 !important;
   color: #ffffff !important;
   font-family: "Vazirmatn", sans-serif !important;
   font-weight: 700 !important;
   font-size: 11px !important;
   border-radius: 9999px !important;
-  border: 2px solid #ffffff !important;
+  border: 1.5px solid #ffffff !important;
   box-shadow: 0 3px 10px rgba(79, 70, 229, 0.4) !important;
   padding: 2px 6px !important;
 }
@@ -1260,12 +1333,30 @@ html[dir="ltr"] .bts-token-simulation-bar {
   border-color: #334155 !important;
 }
 
-.bts-context-pad:not(.disabled):hover {
+.bts-context-pad:not(.disabled):hover,
+.bts-context-pad.active {
   background-color: #4f46e5 !important;
   color: #ffffff !important;
 }
 
-/* Simulation Log Window */
+/* Element Status Badges & Notifications during simulation */
+.bts-element-notification,
+.bts-element-notification.finished,
+.bts-status-badge,
+.bts-notification,
+.bts-notifications .bts-notification {
+  background-color: #4f46e5 !important;
+  color: #ffffff !important;
+  border: 1px solid #6366f1 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.35) !important;
+  font-family: "Vazirmatn", sans-serif !important;
+  font-weight: 700 !important;
+  font-size: 11px !important;
+  padding: 4px 10px !important;
+}
+
+/* Simulation Log Window & Positioning */
 .bts-log {
   background-color: #ffffff !important;
   border: 1px solid #e2e8f0 !important;
@@ -1315,6 +1406,45 @@ html[dir="ltr"] .bts-token-simulation-bar {
 
 .dark-theme .bts-log .bts-entry:hover {
   background-color: #1e1b4b !important;
+}
+
+/* Offset Simulation Log & Notifications to left: 85px so they NEVER overlap zoom control buttons at left: 24px */
+.bts-notifications,
+.bts-log.closed,
+.bts-log:not(.closed) {
+  bottom: 85px !important;
+  left: 85px !important;
+  top: auto !important;
+  right: auto !important;
+  z-index: 35 !important;
+}
+
+html[dir="rtl"] .bts-notifications,
+html[dir="rtl"] .bts-log.closed,
+html[dir="rtl"] .bts-log:not(.closed),
+html[dir="ltr"] .bts-notifications,
+html[dir="ltr"] .bts-log.closed,
+html[dir="ltr"] .bts-log:not(.closed) {
+  left: 85px !important;
+  right: auto !important;
+  bottom: 85px !important;
+  top: auto !important;
+}
+
+/* Expanded Log panel sizing and position */
+.bts-log:not(.closed) {
+  bottom: 20px !important;
+  left: 85px !important;
+  max-height: 280px !important;
+  z-index: 45 !important;
+}
+
+html[dir="rtl"] .bts-log:not(.closed),
+html[dir="ltr"] .bts-log:not(.closed) {
+  left: 85px !important;
+  right: auto !important;
+  bottom: 20px !important;
+  top: auto !important;
 }
 
 /* Hide Simulation Log Badges & IDs */

@@ -333,9 +333,12 @@ export default function BpmnModelerApp({ theme: propsTheme, setTheme: propsSetTh
           }
         });
         
-        // Simulation Log Entries
-        const logTexts = document.querySelectorAll('.bts-log .bts-entry .bts-text');
+        // Simulation Log & Floating Notifications & Badges
+        const logTexts = document.querySelectorAll('.bts-log .bts-entry .bts-text, .bts-notifications .bts-text, .bts-notifications .bts-notification, .bts-entry .bts-text, .bts-element-notification, .bts-status-badge');
         logTexts.forEach(el => {
+          // If the element contains child nodes with bts-text, process children individually
+          if (el.querySelector('.bts-text')) return;
+
           const originalText = (el.getAttribute('data-original-text') || el.textContent || "").trim();
           if (!el.hasAttribute('data-original-text')) {
             el.setAttribute('data-original-text', originalText);
@@ -346,6 +349,9 @@ export default function BpmnModelerApp({ theme: propsTheme, setTheme: propsSetTh
             if (originalText === "Process started") newText = "شروع فرآیند";
             else if (originalText === "Process finished") newText = "پایان فرآیند";
             else if (originalText === "Process entered") newText = "ورود به فرآیند";
+            else if (originalText === "Finished") newText = "پایان یافت";
+            else if (originalText === "Running") newText = "در حال اجرا";
+            else if (originalText === "Paused") newText = "متوقف شده";
             else if (originalText === "Start Event") newText = "رویداد شروع";
             else if (originalText === "End Event") newText = "رویداد پایان";
             else if (originalText === "Task") newText = "وظیفه";
@@ -356,8 +362,14 @@ export default function BpmnModelerApp({ theme: propsTheme, setTheme: propsSetTh
             else if (originalText === "Inclusive Gateway") newText = "درگاه جامع (OR)";
           }
           
-          if (el.textContent !== newText) {
-            el.textContent = newText;
+          if (el.childNodes.length === 1 && el.childNodes[0].nodeType === Node.TEXT_NODE) {
+            if (el.textContent !== newText) {
+              el.textContent = newText;
+            }
+          } else if (el.classList.contains('bts-text')) {
+            if (el.textContent !== newText) {
+              el.textContent = newText;
+            }
           }
           if (el.getAttribute('title') !== newText) {
             el.setAttribute('title', newText);
@@ -1121,7 +1133,7 @@ export default function BpmnModelerApp({ theme: propsTheme, setTheme: propsSetTh
     if (modelerRef.current) {
       const canvas = modelerRef.current.get("canvas") as any;
       if (canvas) {
-        canvas.zoom("fit-viewport", "auto");
+        canvas.zoom(1.0, 'auto');
       }
     }
   };

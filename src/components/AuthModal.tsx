@@ -19,7 +19,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   const [customAvatarUrl, setCustomAvatarUrl] = useState('');
   const [showAvatarUrlInput, setShowAvatarUrlInput] = useState(false);
   
-  // Login State
+  // Profile Edit State
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [editName, setEditName] = useState(currentUser?.name || '');
+  const [editNameEn, setEditNameEn] = useState(currentUser?.nameEn || '');
+  const [editEmail, setEditEmail] = useState(currentUser?.email || '');
+  const [editUsername, setEditUsername] = useState(currentUser?.username || '');
+  const [editJobTitle, setEditJobTitle] = useState(currentUser?.jobTitle || '');
   const [usernameOrEmail, setUsernameOrEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
@@ -271,32 +277,155 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                 </div>
               )}
 
-              {/* Profile Details Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                <div className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700/60 space-y-1">
-                  <span className="text-slate-400 flex items-center gap-1">
-                    <User className="w-3.5 h-3.5 text-indigo-400" />
-                    <span>نام کاربری:</span>
-                  </span>
-                  <span className="font-bold text-slate-900 dark:text-slate-100 block font-mono">@{currentUser.username || 'user'}</span>
-                </div>
+              {/* Profile Details or Edit Form */}
+              {isEditingProfile ? (
+                <form 
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    updateUserProfile({
+                      name: editName.trim(),
+                      nameEn: editNameEn.trim(),
+                      email: editEmail.trim(),
+                      username: editUsername.trim(),
+                      jobTitle: editJobTitle.trim()
+                    });
+                    setIsEditingProfile(false);
+                    setProfileMessage('اطلاعات حساب کاربری شما با موفقیت بروزرسانی شد.');
+                    setTimeout(() => setProfileMessage(''), 3000);
+                  }}
+                  className="space-y-3 bg-slate-50 dark:bg-slate-800/40 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/80 animate-fade-in"
+                >
+                  <h5 className="font-bold text-xs text-indigo-600 dark:text-indigo-400 flex items-center gap-1.5 mb-2">
+                    <User className="w-4 h-4" />
+                    ویرایش مشخصات حساب کاربری
+                  </h5>
 
-                <div className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700/60 space-y-1">
-                  <span className="text-slate-400 flex items-center gap-1">
-                    <Mail className="w-3.5 h-3.5 text-indigo-400" />
-                    <span>ایمیل سازمانی:</span>
-                  </span>
-                  <span className="font-bold text-slate-900 dark:text-slate-100 block font-mono">{currentUser.email}</span>
-                </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                        نام و نام خانوادگی <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                        className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
+                      />
+                    </div>
 
-                <div className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700/60 space-y-1 sm:col-span-2">
-                  <span className="text-slate-400 flex items-center gap-1">
-                    <Briefcase className="w-3.5 h-3.5 text-indigo-400" />
-                    <span>سمت / عنوان شغلی:</span>
-                  </span>
-                  <span className="font-bold text-slate-900 dark:text-slate-100 block">{currentUser.jobTitle || 'کارشناس فرآیند'}</span>
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                        نام انگلیسی
+                      </label>
+                      <input
+                        type="text"
+                        value={editNameEn}
+                        onChange={(e) => setEditNameEn(e.target.value)}
+                        className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white dir-ltr text-right font-mono"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                        ایمیل سازمانی <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type="email"
+                        required
+                        value={editEmail}
+                        onChange={(e) => setEditEmail(e.target.value)}
+                        className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white dir-ltr text-right font-mono"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                        نام کاربری
+                      </label>
+                      <input
+                        type="text"
+                        value={editUsername}
+                        onChange={(e) => setEditUsername(e.target.value)}
+                        className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white dir-ltr text-right font-mono"
+                      />
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                        عنوان شغلی / سمت
+                      </label>
+                      <input
+                        type="text"
+                        value={editJobTitle}
+                        onChange={(e) => setEditJobTitle(e.target.value)}
+                        className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-700">
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingProfile(false)}
+                      className="px-3 py-1.5 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs rounded-xl font-bold hover:bg-slate-300 dark:hover:bg-slate-600 transition cursor-pointer"
+                    >
+                      انصراف
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs rounded-xl font-bold transition shadow-sm cursor-pointer flex items-center gap-1"
+                    >
+                      <Check className="w-3.5 h-3.5" />
+                      ذخیره تغییرات
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                    <div className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700/60 space-y-1">
+                      <span className="text-slate-400 flex items-center gap-1">
+                        <User className="w-3.5 h-3.5 text-indigo-400" />
+                        <span>نام کاربری:</span>
+                      </span>
+                      <span className="font-bold text-slate-900 dark:text-slate-100 block font-mono">@{currentUser.username || 'user'}</span>
+                    </div>
+
+                    <div className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700/60 space-y-1">
+                      <span className="text-slate-400 flex items-center gap-1">
+                        <Mail className="w-3.5 h-3.5 text-indigo-400" />
+                        <span>ایمیل سازمانی:</span>
+                      </span>
+                      <span className="font-bold text-slate-900 dark:text-slate-100 block font-mono">{currentUser.email}</span>
+                    </div>
+
+                    <div className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700/60 space-y-1 sm:col-span-2">
+                      <span className="text-slate-400 flex items-center gap-1">
+                        <Briefcase className="w-3.5 h-3.5 text-indigo-400" />
+                        <span>سمت / عنوان شغلی:</span>
+                      </span>
+                      <span className="font-bold text-slate-900 dark:text-slate-100 block">{currentUser.jobTitle || 'کارشناس فرآیند'}</span>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditName(currentUser.name);
+                      setEditNameEn(currentUser.nameEn || '');
+                      setEditEmail(currentUser.email);
+                      setEditUsername(currentUser.username || '');
+                      setEditJobTitle(currentUser.jobTitle || '');
+                      setIsEditingProfile(true);
+                    }}
+                    className="w-full py-2.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200/80 dark:border-indigo-800/60 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <User className="w-4 h-4" />
+                    <span>ویرایش اطلاعات حساب کاربری</span>
+                  </button>
                 </div>
-              </div>
+              )}
 
               {/* Actions */}
               <div className="pt-2">

@@ -26,13 +26,15 @@ interface WorkspaceContextType {
   loginUser: (usernameOrEmail: string, password: string) => { success: boolean; error?: string };
   logoutUser: () => void;
   registerUser: (userData: { name: string; nameEn?: string; email: string; username?: string; password?: string; jobTitle?: string }) => User;
-  updateUserProfile: (data: { avatar?: string; name?: string; nameEn?: string; jobTitle?: string }) => void;
+  updateUserProfile: (data: { avatar?: string; name?: string; nameEn?: string; email?: string; username?: string; jobTitle?: string }) => void;
   
   // مدیریت تیم‌ها و سطوح دسترسی (RBAC)
   activeTeam: Team;
   teams: Team[];
   switchTeam: (teamId: string) => void;
   createTeam: (data: { name: string; nameEn?: string; description?: string }) => Team;
+  deleteTeam: (teamId: string) => boolean;
+  leaveTeam: (teamId: string) => boolean;
   addTeamMember: (teamId: string, email: string, role: TeamRole) => boolean;
   updateMemberRole: (teamId: string, userId: string, newRole: TeamRole) => void;
   removeTeamMember: (teamId: string, userId: string) => void;
@@ -391,7 +393,7 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     return newUser;
   };
 
-  const updateUserProfile = (data: { avatar?: string; name?: string; nameEn?: string; jobTitle?: string }) => {
+  const updateUserProfile = (data: { avatar?: string; name?: string; nameEn?: string; email?: string; username?: string; jobTitle?: string }) => {
     if (!currentUser) return;
 
     const updatedUser: User = {
@@ -399,6 +401,8 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       ...(data.avatar !== undefined && { avatar: data.avatar }),
       ...(data.name !== undefined && { name: data.name }),
       ...(data.nameEn !== undefined && { nameEn: data.nameEn }),
+      ...(data.email !== undefined && { email: data.email }),
+      ...(data.username !== undefined && { username: data.username }),
       ...(data.jobTitle !== undefined && { jobTitle: data.jobTitle }),
     };
 
@@ -443,6 +447,51 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setTeams(prev => [...prev, newTeam]);
     setActiveTeamId(newTeam.id);
     return newTeam;
+  };
+
+  const deleteTeam = (teamId: string): boolean => {
+    if (teams.length <= 1) return false;
+    const remaining = teams.filter(t => t.id !== teamId);
+    const targetTeamId = remaining[0].id;
+
+    // Reassign diagrams and folders belonging to deleted team
+    setDiagrams(prev => prev.map(d => d.teamId === teamId ? { ...d, teamId: targetTeamId } : d));
+    setFolders(prev => prev.map(f => f.teamId === teamId ? { ...f, teamId: targetTeamId } : f));
+
+    setTeams(remaining);
+    if (activeTeamId === teamId) {
+      setActiveTeamId(targetTeamId);
+      setSelectedFolderId(null);
+    }
+    return true;
+  };
+
+  const leaveTeam = (teamId: string): boolean => {
+    if (teams.length <= 1) return false;
+    if (!currentUser) return false;
+
+    const targetTeam = teams.find(t => t.id === teamId);
+    if (!targetTeam) return false;
+
+    setTeams(prev => prev.map(t => {
+      if (t.id === teamId) {
+        return {
+          ...t,
+          members: t.members.filter(m => m.userId !== currentUser.id)
+        };
+      }
+      return t;
+    }));
+
+    if (activeTeamId === teamId) {
+      const otherTeams = teams.filter(t => t.id !== teamId && t.members.some(m => m.userId === currentUser.id));
+      const nextActiveId = otherTeams.length > 0 ? otherTeams[0].id : teams.find(t => t.id !== teamId)?.id || '';
+      if (nextActiveId) {
+        setActiveTeamId(nextActiveId);
+        setSelectedFolderId(null);
+      }
+    }
+    return true;
   };
 
   const addTeamMember = (teamId: string, email: string, role: TeamRole): boolean => {
@@ -715,6 +764,8 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       teams,
       switchTeam,
       createTeam,
+      deleteTeam,
+      leaveTeam,
       addTeamMember,
       updateMemberRole,
       removeTeamMember,
