@@ -476,7 +476,7 @@ export const DiagramMetadataHeader: React.FC<DiagramMetadataHeaderProps> = ({
               </button>
             )}
 
-            {/* اطلاعات کاربر و خروج */}
+            {/* اطلاعات کاربر */}
             {currentUser && (
               <div className={`flex items-center gap-2 ${isEn ? 'pl-2 border-l' : 'pr-2 border-r'} border-slate-800`}>
                 <img
@@ -485,13 +485,6 @@ export const DiagramMetadataHeader: React.FC<DiagramMetadataHeaderProps> = ({
                   className="w-7 h-7 rounded-full object-cover border border-indigo-500/50"
                   title={`${currentUser.name} (${currentUser.jobTitle || ''})`}
                 />
-                <button
-                  onClick={logoutUser}
-                  className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition cursor-pointer"
-                  title={t.logoutTooltip}
-                >
-                  <LogOut className="w-4 h-4" />
-                </button>
               </div>
             )}
 

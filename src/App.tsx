@@ -41,13 +41,17 @@ function MainAppContent() {
     window.location.hash.includes('#embed-')
   );
 
-  // در صورت وجود لینک اشتراک‌گذاری یا دیاگرام فعال، بدون نیاز به ورود مستقیم وارد مدلر می‌شود
-  if (!isAuthenticated && !activeDiagram && !hasShareParam) {
+  // اگر کاربر لاگین نیست
+  if (!isAuthenticated) {
+    // تنها در صورتی بدون لاگین وارد مدلر می‌شود که لینک اشتراک‌گذاری در آدرس موجود باشد و دیاگرام فعال تعریف شده باشد
+    if (hasShareParam && activeDiagram) {
+      return <BpmnModelerApp theme={theme} setTheme={setTheme} />;
+    }
     return <LoginScreen />;
   }
 
   // رندر نمای داشبورد یا بوم طراحی بر اساس حالت برنامه
-  if (activeView === "dashboard" && isAuthenticated) {
+  if (activeView === "dashboard") {
     return <DiagramsDashboard theme={theme} setTheme={setTheme} />;
   }
 

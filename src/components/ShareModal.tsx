@@ -37,7 +37,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, diagram
 
   if (!isOpen || !diagram) return null;
 
-  const shareUrl = `${window.location.origin}/#share-${diagram.id}?access=${accessLevel}`;
+  const shareUrl = `${window.location.origin}${window.location.pathname}?share=${diagram.id}&access=${accessLevel}`;
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(shareUrl);

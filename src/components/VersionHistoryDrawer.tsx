@@ -114,7 +114,7 @@ export const VersionHistoryDrawer: React.FC<VersionHistoryDrawerProps> = ({
                       </button>
                     )}
 
-                    {/* Restore button */}
+                    {/* Restore / Load button */}
                     {!isLatest && (
                       <button
                         type="button"
@@ -122,10 +122,11 @@ export const VersionHistoryDrawer: React.FC<VersionHistoryDrawerProps> = ({
                           onRestoreVersionXml(v.xml, v.version);
                           onClose();
                         }}
-                        className="flex items-center gap-1 text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline bg-indigo-50 dark:bg-indigo-900/30 px-2.5 py-1 rounded-lg border border-indigo-200/60 dark:border-indigo-800/40 transition cursor-pointer"
+                        className="flex items-center gap-1 text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 bg-indigo-50 dark:bg-indigo-900/30 px-2.5 py-1 rounded-lg border border-indigo-200/60 dark:border-indigo-800/40 transition cursor-pointer"
+                        title={`بارگذاری نسخه ${v.version}.0 روی بوم جهت مشاهده و ویرایش (بدون ایجاد نسخه جدید)`}
                       >
                         <RotateCcw className="w-3.5 h-3.5" />
-                        <span>بازیابی این نسخه</span>
+                        <span>بارگذاری روی بوم</span>
                       </button>
                     )}
                   </div>

@@ -92,7 +92,7 @@ export default function BpmnModelerApp({ theme: propsTheme, setTheme: propsSetTh
   const [selectedId, setSelectedId] = useState<string>("demo-process");
   const [currentDiagram, setCurrentDiagram] = useState<Diagram | null>(null);
   const [lintIssues, setLintIssues] = useState<any[]>([]);
-  const [isLintPanelOpen, setIsLintPanelOpen] = useState(true);
+  const [isLintPanelOpen, setIsLintPanelOpen] = useState(false);
 
   // Form states
   const [localTheme, setLocalTheme] = useState<"light" | "dark">("light");
@@ -115,6 +115,15 @@ export default function BpmnModelerApp({ theme: propsTheme, setTheme: propsSetTh
   useEffect(() => {
     (window as any).__CURRENT_USER_ROLE__ = currentRole;
   }, [currentRole]);
+
+  useEffect(() => {
+    if (modelerRef.current) {
+      const linting = modelerRef.current.get('linting') as any;
+      if (linting && typeof linting.toggle === 'function') {
+        linting.toggle(isLintPanelOpen);
+      }
+    }
+  }, [isLintPanelOpen]);
   const [activeRightTab, setActiveRightTab] = useState<"details" | "comments">("details");
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false); 
@@ -472,16 +481,6 @@ export default function BpmnModelerApp({ theme: propsTheme, setTheme: propsSetTh
       modeler.importXML(targetXml).then(() => {
         const canvas = modeler.get('canvas') as any;
         canvas?.zoom?.('fit-viewport');
-        const linting = modeler.get('linting') as any;
-        if (linting) {
-          if (typeof linting.activateLinting === 'function') {
-            linting.activateLinting();
-          } else if (typeof linting.toggle === 'function') {
-            linting.toggle(true);
-          } else if (typeof linting.activate === 'function') {
-            linting.activate();
-          }
-        }
       }).catch(console.error);
     } else {
       const data = localStorage.getItem(`bpmn-diagram-${selectedId}`);
@@ -504,16 +503,6 @@ export default function BpmnModelerApp({ theme: propsTheme, setTheme: propsSetTh
                modeler.importXML(diagram.xml).then(() => {
                   const canvas = modeler.get('canvas') as any;
                   canvas?.zoom?.('fit-viewport');
-                  const linting = modeler.get('linting') as any;
-                  if (linting) {
-                    if (typeof linting.activateLinting === 'function') {
-                      linting.activateLinting();
-                    } else if (typeof linting.toggle === 'function') {
-                      linting.toggle(true);
-                    } else if (typeof linting.activate === 'function') {
-                      linting.activate();
-                    }
-                  }
                }).catch(console.error);
              }
            }
@@ -564,7 +553,7 @@ export default function BpmnModelerApp({ theme: propsTheme, setTheme: propsSetTh
     setTimeout(() => {
       const linting = modeler.get('linting') as any;
       if (linting && typeof linting.toggle === 'function') {
-        linting.toggle(true);
+        linting.toggle(false);
       }
     }, 300);
     
@@ -1301,11 +1290,7 @@ export default function BpmnModelerApp({ theme: propsTheme, setTheme: propsSetTh
           <div className={`border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-[#1e293b] flex flex-col z-20 shrink-0 transition-all duration-300 ${isLintPanelOpen && lintIssues.length > 0 ? 'h-[200px]' : 'h-8'}`}>
             <div 
               className="px-4 py-1.5 bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-600 dark:text-slate-300 flex items-center justify-between cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition select-none"
-              onClick={() => {
-                if (lintIssues.length > 0) {
-                  setIsLintPanelOpen(!isLintPanelOpen);
-                }
-              }}
+              onClick={() => setIsLintPanelOpen(!isLintPanelOpen)}
               dir={lang === "fa" ? "rtl" : "ltr"}
             >
               <div className="flex items-center gap-2">
@@ -1325,9 +1310,7 @@ export default function BpmnModelerApp({ theme: propsTheme, setTheme: propsSetTh
                   </>
                 )}
               </div>
-              {lintIssues.length > 0 && (
-                <ChevronDown className={`w-4 h-4 text-slate-500 transition-transform ${!isLintPanelOpen ? 'rotate-180' : ''}`} />
-              )}
+              <ChevronDown className={`w-4 h-4 text-slate-500 transition-transform ${!isLintPanelOpen ? 'rotate-180' : ''}`} />
             </div>
             {isLintPanelOpen && lintIssues.length > 0 && (
               <div className="overflow-y-auto p-2 flex-1 space-y-1">
@@ -1383,18 +1366,28 @@ export default function BpmnModelerApp({ theme: propsTheme, setTheme: propsSetTh
           </button>
 
           <div className="flex-1 h-full overflow-hidden flex flex-col bg-white dark:bg-[#1e293b]">
-            <div className="flex items-center border-b border-slate-200 dark:border-slate-800">
-              <button 
-                onClick={() => setActiveRightTab("details")}
-                className={`flex-1 py-3 text-xs font-bold transition border-b-2 ${activeRightTab === 'details' ? 'border-blue-600 text-blue-600 dark:text-blue-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400'}`}
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pr-2">
+              <div className="flex items-center flex-1">
+                <button 
+                  onClick={() => setActiveRightTab("details")}
+                  className={`flex-1 py-3 text-xs font-bold transition border-b-2 ${activeRightTab === 'details' ? 'border-blue-600 text-blue-600 dark:text-blue-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400'}`}
+                >
+                  {t("elementDetails", lang)}
+                </button>
+                <button 
+                  onClick={() => setActiveRightTab("comments")}
+                  className={`flex-1 py-3 text-xs font-bold transition border-b-2 ${activeRightTab === 'comments' ? 'border-blue-600 text-blue-600 dark:text-blue-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400'}`}
+                >
+                  {t("commentsAndDiscussions", lang)}
+                </button>
+              </div>
+              <button
+                onClick={() => setIsPropertiesOpen(false)}
+                className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition cursor-pointer ml-1"
+                title={t("closePanel", lang)}
+                id="properties-close-header-btn"
               >
-                {t("elementDetails", lang)}
-              </button>
-              <button 
-                onClick={() => setActiveRightTab("comments")}
-                className={`flex-1 py-3 text-xs font-bold transition border-b-2 ${activeRightTab === 'comments' ? 'border-blue-600 text-blue-600 dark:text-blue-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400'}`}
-              >
-                {t("commentsAndDiscussions", lang)}
+                <X className="w-4 h-4" />
               </button>
             </div>
             
@@ -1652,11 +1645,7 @@ export default function BpmnModelerApp({ theme: propsTheme, setTheme: propsSetTh
             });
           }
           if (activeDiagram) {
-            workspace.saveDiagramXmlVersion(
-              activeDiagram.id,
-              restoredXml,
-              `بازگردانی و بازیابی نسخه ${versionNum}.0`
-            );
+            workspace.updateDiagram(activeDiagram.id, { xml: restoredXml });
           }
         }}
         onCompareVersions={(oldXml, newXml) => {

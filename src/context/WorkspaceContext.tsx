@@ -262,17 +262,41 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const activeTeam = teams.find(t => t.id === activeTeamId) || teams[0] || INITIAL_TEAMS[0];
   const activeDiagram = diagrams.find(d => d.id === activeDiagramId) || null;
 
-  // محاسبه نقش کاربر در تیم فعال بر اساس RBAC
+  // محاسبه نقش کاربر در تیم فعال بر اساس RBAC و لینک‌های اشتراک‌گذاری
+  const roleRank: Record<string, number> = {
+    manager: 4,
+    editor: 3,
+    reviewer: 2,
+    commenter: 2,
+    viewer: 1,
+  };
+
   const getUserRoleInTeam = (teamId: string, userId: string): TeamRole => {
-    const override = (window as any).__URL_ACCESS_OVERRIDE__;
-    if (override && (override === 'viewer' || override === 'editor' || override === 'reviewer' || override === 'manager')) {
-      return override as TeamRole;
+    let baseRole: TeamRole = 'viewer';
+    if (userId) {
+      const team = teams.find(t => t.id === teamId);
+      if (team) {
+        const member = team.members.find(m => m.userId === userId);
+        if (member) {
+          baseRole = member.role;
+        } else {
+          baseRole = 'editor';
+        }
+      } else {
+        baseRole = 'editor';
+      }
     }
-    if (!userId) return 'viewer';
-    const team = teams.find(t => t.id === teamId);
-    if (!team) return 'viewer';
-    const member = team.members.find(m => m.userId === userId);
-    return member ? member.role : 'viewer';
+
+    const override = (window as any).__URL_ACCESS_OVERRIDE__;
+    if (override) {
+      const linkRole = override === 'commenter' ? 'reviewer' : override;
+      const baseRank = roleRank[baseRole] || 1;
+      const linkRank = roleRank[linkRole] || 1;
+      if (linkRank > baseRank && (linkRole === 'viewer' || linkRole === 'editor' || linkRole === 'reviewer' || linkRole === 'manager')) {
+        return linkRole as TeamRole;
+      }
+    }
+    return baseRole;
   };
 
   const currentRole = getUserRoleInTeam(activeTeam.id, currentUser ? currentUser.id : '');
@@ -321,6 +345,13 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const logoutUser = () => {
     setCurrentUser(null);
+    setActiveDiagramId(null);
+    setActiveView('dashboard');
+    (window as any).__URL_ACCESS_OVERRIDE__ = null;
+    localStorage.removeItem('bpmncraft_current_user');
+    if (typeof window !== 'undefined') {
+      window.history.replaceState(null, '', window.location.pathname);
+    }
   };
 
   const registerUser = (userData: { name: string; nameEn?: string; email: string; username?: string; password?: string; jobTitle?: string }): User => {
