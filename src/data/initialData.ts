@@ -114,24 +114,24 @@ export const DEMO_BPMN_XML = `<?xml version="1.0" encoding="UTF-8"?>
 <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn">
   <bpmn:process id="Proc_VendorPayment" name="فرآیند تسویه حساب و پرداخت به تامین‌کنندگان" isExecutable="true">
     <bpmn:startEvent id="StartEvent_1" name="دریافت فاکتور">
-      <bpmn:outgoing">Flow_1</bpmn:outgoing>
+      <bpmn:outgoing>Flow_1</bpmn:outgoing>
     </bpmn:startEvent>
     <bpmn:userTask id="Task_CheckInvoice" name="تطبیق فاکتور و رسید انبار">
       <bpmn:incoming>Flow_1</bpmn:incoming>
-      <bpmn:outgoing">Flow_2</bpmn:outgoing>
+      <bpmn:outgoing>Flow_2</bpmn:outgoing>
     </bpmn:userTask>
     <bpmn:exclusiveGateway id="Gateway_Approval" name="تایید حسابداری؟">
       <bpmn:incoming>Flow_2</bpmn:incoming>
-      <bpmn:outgoing">Flow_Approved</bpmn:outgoing>
-      <bpmn:outgoing">Flow_Rejected</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Approved</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Rejected</bpmn:outgoing>
     </bpmn:exclusiveGateway>
     <bpmn:serviceTask id="Task_TransferMoney" name="پرداخت الکترونیک از خزانه">
       <bpmn:incoming>Flow_Approved</bpmn:incoming>
-      <bpmn:outgoing">Flow_EndApproved</bpmn:outgoing>
+      <bpmn:outgoing>Flow_EndApproved</bpmn:outgoing>
     </bpmn:serviceTask>
     <bpmn:userTask id="Task_RejectNotice" name="اعلام اصلاحیه به تامین‌کننده">
       <bpmn:incoming>Flow_Rejected</bpmn:incoming>
-      <bpmn:outgoing">Flow_EndRejected</bpmn:outgoing>
+      <bpmn:outgoing>Flow_EndRejected</bpmn:outgoing>
     </bpmn:userTask>
     <bpmn:endEvent id="EndEvent_Success" name="خاتمه موفق تسویه">
       <bpmn:incoming>Flow_EndApproved</bpmn:incoming>
