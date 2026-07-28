@@ -24,34 +24,23 @@ body {
   color: #0f172a;
 }
 
-/* RTL & Center alignment for SVG text in BPMN canvas */
-svg text, 
+/* RTL & Alignment settings for SVG text in BPMN canvas */
+.bjs-container svg,
+.djs-container svg,
+.djs-container,
+.djs-element,
+.djs-visual,
+.djs-label {
+  direction: ltr !important;
+}
+
+.bjs-container text,
+.djs-container text,
 .djs-visual text, 
 .djs-label text, 
 .djs-group text,
 .djs-element text {
   font-family: "Vazirmatn", sans-serif !important;
-  text-anchor: middle !important;
-}
-
-svg tspan,
-.djs-visual tspan,
-.djs-label tspan {
-  text-anchor: middle !important;
-}
-
-/* Ensure Task titles are centered inside tasks */
-.djs-element[data-element-id*="Task"] .djs-visual text,
-.djs-element[data-element-id*="Activity"] .djs-visual text,
-.djs-element[data-element-id*="SubProcess"] .djs-visual text {
-  text-anchor: middle !important;
-  dominant-baseline: central !important;
-}
-
-/* Ensure Event labels are bottom-centered */
-.djs-element[data-element-id*="Event"] + .djs-label text,
-.djs-element[data-element-id*="Gateway"] + .djs-label text {
-  text-anchor: middle !important;
 }
 
 /* Layout for full screen */
